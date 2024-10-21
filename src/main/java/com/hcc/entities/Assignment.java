@@ -15,7 +15,12 @@ public class Assignment {
     private String branch;
     @Column(name = "video_url")
     private String reviewVideoUrl;
+    @OneToOne
+    @JoinColumn
     private User user;
+    @OneToOne
+    @JoinColumn
+    private User codeReviewer;
 
     /**
      * no-args constructor
@@ -94,5 +99,13 @@ public class Assignment {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public User getCodeReviewer() {
+        return codeReviewer;
+    }
+
+    public void setCodeReviewer(User codeReviewer) {
+        this.codeReviewer = codeReviewer;
     }
 }

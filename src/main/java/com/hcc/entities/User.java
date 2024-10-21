@@ -15,7 +15,7 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "cohort_start_date")
+    @Column(name = "date")
     private LocalDate cohortStartDate;
     private String username;
     private String password;
