@@ -2,12 +2,15 @@ package com.hcc.entities;
 
 import org.springframework.security.core.GrantedAuthority;
 
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 
+@Entity
+@Table(name = "authorities")
 public class Authority implements GrantedAuthority {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String authority;
-
     @ManyToOne
     private User user;
 

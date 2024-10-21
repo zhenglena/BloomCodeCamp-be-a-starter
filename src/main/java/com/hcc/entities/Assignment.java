@@ -1,11 +1,19 @@
 package com.hcc.entities;
 
+import javax.persistence.*;
+
+@Entity
+@Table(name = "assignments")
 public class Assignment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String status;
     private Integer number;
+    @Column(name = "github_url")
     private String githubUrl;
     private String branch;
+    @Column(name = "video_url")
     private String reviewVideoUrl;
     private User user;
 
