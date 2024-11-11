@@ -13,6 +13,10 @@ public class AssignmentResponseDto {
     private AssignmentEnum[] assignmentEnums = AssignmentEnum.values();
     private AssignmentStatusEnum[] statusEnums = AssignmentStatusEnum.values();
 
+    /**
+     * Constructor
+     * @param assignment the assignment
+     */
     public AssignmentResponseDto(Assignment assignment) {
         this.assignment = assignment;
     }

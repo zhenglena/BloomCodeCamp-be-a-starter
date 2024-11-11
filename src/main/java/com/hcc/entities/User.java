@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "users")
@@ -20,6 +21,8 @@ public class User implements UserDetails {
     private String username;
     private String password;
 
+    @Transient
+    private List<Authority> authorities;
     /**
      * no-args
      */
@@ -31,10 +34,11 @@ public class User implements UserDetails {
      * @param username username
      * @param password password
      */
-    public User(LocalDate cohortStartDate, String username, String password) {
+    public User(LocalDate cohortStartDate, String username, String password, List<Authority> authorities) {
         this.cohortStartDate = cohortStartDate;
         this.username = username;
         this.password = password;
+        this.authorities = authorities;
     }
 
     @Override
@@ -96,5 +100,23 @@ public class User implements UserDetails {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void setAuthorities(List<Authority> authorities) {
+        this.authorities = authorities;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(getId(), user.getId()) && Objects.equals(getCohortStartDate(), user.getCohortStartDate())
+                && Objects.equals(getUsername(), user.getUsername()) && Objects.equals(getPassword(), user.getPassword());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getCohortStartDate(), getUsername(), getPassword());
     }
 }
