@@ -12,7 +12,7 @@ public class Authority implements GrantedAuthority {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String authority;
+    private String authority; //leave it as String bc this is implementing GrantedAuthority and it's more consistent
     @ManyToOne
     @JoinColumn(name = "id")
     private User user;
@@ -38,8 +38,8 @@ public class Authority implements GrantedAuthority {
         this.id = id;
     }
 
-    public void setAuthority(String authority) {
-        this.authority = authority;
+    public void setAuthority(AuthorityEnum authority) {
+        this.authority = authority.name();
     }
 
     public User getUser() {

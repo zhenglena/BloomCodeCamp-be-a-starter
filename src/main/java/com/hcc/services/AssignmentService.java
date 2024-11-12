@@ -20,6 +20,8 @@ public class AssignmentService {
     private AssignmentRepository assignmentRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private UserService userService;
     /**
      * Retrieves a List of Assignments by User
      * @param userId the username of the user
@@ -58,8 +60,7 @@ public class AssignmentService {
             throw new UnauthorizedUpdateException("Updated assignment ID " + assignment.getId() +
                     " does not match argument: " + id);
         }
-        
-        Assignment retrieved = getAssignmentById(id);
+
         return assignment;
     }
 
