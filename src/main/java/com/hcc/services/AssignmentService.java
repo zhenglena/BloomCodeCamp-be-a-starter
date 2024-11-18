@@ -7,9 +7,10 @@ import com.hcc.exceptions.UnauthorizedUpdateException;
 import com.hcc.repositories.AssignmentRepository;
 import com.hcc.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -20,48 +21,66 @@ public class AssignmentService {
     private AssignmentRepository assignmentRepository;
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private UserService userService;
+
     /**
-     * Retrieves a List of Assignments by User
-     * @param userId the username of the user
-     * @return List of Assignments if it exists. If it doesn't, it'll return an empty list.
+     * Retrieves the list of Assignments that are associated with a user ID.
+     * First checks if the user exists. If user does not exist, then it throws a ResourceNotFoundException.
+     * if user does exist, then it will retrieve the list of assignments for that user.
+     * If the list comes back empty, then ResponseEntity will return a 204 No Content.
+     * @param userId the user ID of where to retrieve the assignments
+     * @return 200 OK response with List of Assignments.
      */
-    public List<Assignment> getAssignmentsByUserId(Long userId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        Optional<List<Assignment>> assignments;
-        if (userOptional.isPresent()) {
-             assignments = assignmentRepository.findByUserId(userId);
-        } else {
-            throw new ResourceNotFoundException("User with ID: " + userId + "does not exist.");
+    public ResponseEntity<?> getAssignmentsByUserId(Long userId) {
+        boolean exists = userRepository.findById(userId).isPresent();
+        if (!exists) {
+            throw new ResourceNotFoundException("User with ID " + userId + "does not exist.");
         }
-        return assignments.orElseGet(ArrayList::new);
+
+        List<Assignment> assignments = assignmentRepository.findByUserId(userId);
+        if (assignments.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.ok(assignments);
+        }
     }
 
     /**
-     * Retrieves an Assignment by its ID
+     * Retrieves an Assignment by its ID. If the assignment does not exist, then ResourceNotFoundException will be thrown.
      * @param id the ID of the assignment
-     * @return the Assignment
+     * @return 200 OK response with Assignment
      */
-    public Assignment getAssignmentById(Long id) {
-        return assignmentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Assignment not " +
-                "found with ID: " + id));
+    public ResponseEntity<Assignment> getAssignmentById(Long id) {
+        Optional<Assignment> assignmentOptional = assignmentRepository.findById(id);
+        return assignmentOptional.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    /**
-     * Updates the Assignment
-     * @param assignment the updated Assignment
-     * @param id the ID of the Assignment to update
-     * @return updated Assignment
-     */
-    public Assignment putAssignmentById(Assignment assignment, Long id) {
-        //TODO: finish this
-        if (!Objects.equals(assignment.getId(), id)) {
-            throw new UnauthorizedUpdateException("Updated assignment ID " + assignment.getId() +
+
+    public ResponseEntity<?> putAssignmentById(Assignment updatedAssignment, Long id, User user) {
+        if (!Objects.equals(updatedAssignment.getId(), id)) {
+            throw new UnauthorizedUpdateException("Updated assignment ID " + updatedAssignment.getId() +
                     " does not match argument: " + id);
         }
+        Optional<Assignment> optionalAssignment = assignmentRepository.findById(id);
+        if (optionalAssignment.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Assignment not found with ID: " + id);
+        }
+        Assignment assignment = optionalAssignment.get();
 
-        return assignment;
+        if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
+            updateAdminFields(assignment, updatedAssignment);
+        }
+
+        if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_REVIEWER"))) {
+            updateReviewerFields(assignment, updatedAssignment);
+        }
+
+        if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_LEARNER"))) {
+            updateLearnerFields(assignment, updatedAssignment);
+
+        }
+
+        assignmentRepository.save(assignment);
+        return ResponseEntity.ok(assignment);
     }
 
     /**
@@ -69,7 +88,70 @@ public class AssignmentService {
      * @param assignment the new Assignment
      * @return the added Assignment
      */
-    public Assignment postAssignment(Assignment assignment) {
-        return assignmentRepository.save(assignment);
+    public ResponseEntity<?> postAssignment(Assignment assignment) {
+        try {
+            assignmentRepository.save(assignment);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(assignment);
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(assignment);
+    }
+
+    /**
+     * Allows Admin roles to update everything on an assignment other than ID
+     * @param assignment the assignment to update
+     * @param updatedAssignment the assignment with updated fields
+     */
+    private void updateAdminFields(Assignment assignment, Assignment updatedAssignment) {
+        if (!updatedAssignment.getBranch().equals(assignment.getBranch())) {
+            assignment.setBranch(updatedAssignment.getBranch());
+        }
+        if (!updatedAssignment.getCodeReviewer().equals(assignment.getCodeReviewer())) {
+            assignment.setCodeReviewer(updatedAssignment.getCodeReviewer());
+        }
+        if (!updatedAssignment.getNumber().equals(assignment.getNumber())) {
+            assignment.setNumber(updatedAssignment.getNumber());
+        }
+        if (!updatedAssignment.getGithubUrl().equals(assignment.getGithubUrl())) {
+            assignment.setGithubUrl(updatedAssignment.getGithubUrl());
+        }
+        if (!updatedAssignment.getStatus().equals(assignment.getStatus())) {
+            assignment.setStatus(updatedAssignment.getStatus());
+        }
+        if (!updatedAssignment.getReviewVideoUrl().equals(assignment.getReviewVideoUrl())) {
+            assignment.setReviewVideoUrl(updatedAssignment.getReviewVideoUrl());
+        }
+        if (!updatedAssignment.getUser().equals(assignment.getUser())) {
+            assignment.setUser(updatedAssignment.getUser());
+        }
+    }
+
+    /**
+     * Allows Reviewer roles to update only the Code Reviewer (attaching their name to the assignment)
+     * or the status of the assignment
+     * @param assignment the assignment to update
+     * @param updatedAssignment the assignment with updated fields
+     */
+    private void updateReviewerFields(Assignment assignment, Assignment updatedAssignment) {
+        if (!updatedAssignment.getCodeReviewer().equals(assignment.getCodeReviewer())) {
+            assignment.setCodeReviewer(updatedAssignment.getCodeReviewer());
+        }
+        if (!updatedAssignment.getStatus().equals(assignment.getStatus())) {
+            assignment.setStatus(updatedAssignment.getStatus());
+        }
+    }
+
+    /**
+     * Allows Learner roles to update only the branch or the GitHub URL
+     * @param assignment the assignment to update
+     * @param updatedAssignment the assignment with updated fields
+     */
+    private void updateLearnerFields(Assignment assignment, Assignment updatedAssignment) {
+        if (!updatedAssignment.getBranch().equals(assignment.getBranch())) {
+            assignment.setBranch(updatedAssignment.getBranch());
+        }
+        if (!updatedAssignment.getGithubUrl().equals(assignment.getGithubUrl())) {
+            assignment.setGithubUrl(updatedAssignment.getGithubUrl());
+        }
     }
 }
