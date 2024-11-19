@@ -6,6 +6,8 @@ import com.hcc.exceptions.ResourceNotFoundException;
 import com.hcc.exceptions.UnauthorizedUpdateException;
 import com.hcc.repositories.AssignmentRepository;
 import com.hcc.repositories.UserRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,12 +17,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+
 @Service
 public class AssignmentService {
     @Autowired
     private AssignmentRepository assignmentRepository;
     @Autowired
     private UserRepository userRepository;
+
+    private final Logger log = LogManager.getLogger(LoginService.class);
 
     /**
      * Retrieves the list of Assignments that are associated with a user ID.
@@ -30,14 +35,16 @@ public class AssignmentService {
      * @param userId the user ID of where to retrieve the assignments
      * @return 200 OK response with List of Assignments.
      */
-    public ResponseEntity<?> getAssignmentsByUserId(Long userId) {
+    public ResponseEntity<List<Assignment>> getAssignmentsByUserId(Long userId) {
         boolean exists = userRepository.findById(userId).isPresent();
         if (!exists) {
-            throw new ResourceNotFoundException("User with ID " + userId + "does not exist.");
+            log.error("User ID does not exist");
+            throw new ResourceNotFoundException("User with ID " + userId + " does not exist");
         }
 
         List<Assignment> assignments = assignmentRepository.findByUserId(userId);
         if (assignments.isEmpty()) {
+            log.info("No assignments found for user");
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.ok(assignments);
@@ -51,20 +58,23 @@ public class AssignmentService {
      */
     public ResponseEntity<Assignment> getAssignmentById(Long id) {
         Optional<Assignment> assignmentOptional = assignmentRepository.findById(id);
-        return assignmentOptional.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        if (assignmentOptional.isEmpty()) {
+            log.error("Assignment doesn't exist");
+            throw new ResourceNotFoundException("Assignment with ID " + id + " does not exist");
+        } else {
+            return ResponseEntity.ok(assignmentOptional.get());
+        }
     }
 
 
-    public ResponseEntity<?> putAssignmentById(Assignment updatedAssignment, Long id, User user) {
+    public ResponseEntity<Assignment> putAssignmentById(Assignment updatedAssignment, Long id, User user) {
         if (!Objects.equals(updatedAssignment.getId(), id)) {
+            log.error("Updated assignment ID does not match ID provided");
             throw new UnauthorizedUpdateException("Updated assignment ID " + updatedAssignment.getId() +
                     " does not match argument: " + id);
         }
-        Optional<Assignment> optionalAssignment = assignmentRepository.findById(id);
-        if (optionalAssignment.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Assignment not found with ID: " + id);
-        }
-        Assignment assignment = optionalAssignment.get();
+
+        Assignment assignment = getAssignmentById(id).getBody();
 
         if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
             updateAdminFields(assignment, updatedAssignment);
@@ -88,10 +98,11 @@ public class AssignmentService {
      * @param assignment the new Assignment
      * @return the added Assignment
      */
-    public ResponseEntity<?> postAssignment(Assignment assignment) {
+    public ResponseEntity<Assignment> postAssignment(Assignment assignment) {
         try {
             assignmentRepository.save(assignment);
         } catch (IllegalArgumentException e) {
+            log.error("Empty body in the assignment: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(assignment);
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(assignment);
@@ -103,41 +114,44 @@ public class AssignmentService {
      * @param updatedAssignment the assignment with updated fields
      */
     private void updateAdminFields(Assignment assignment, Assignment updatedAssignment) {
-        if (!updatedAssignment.getBranch().equals(assignment.getBranch())) {
+        if (updatedAssignment.getBranch() != null) {
             assignment.setBranch(updatedAssignment.getBranch());
         }
-        if (!updatedAssignment.getCodeReviewer().equals(assignment.getCodeReviewer())) {
+        if (updatedAssignment.getCodeReviewer() != null) {
             assignment.setCodeReviewer(updatedAssignment.getCodeReviewer());
         }
-        if (!updatedAssignment.getNumber().equals(assignment.getNumber())) {
+        if (updatedAssignment.getNumber() != null) {
             assignment.setNumber(updatedAssignment.getNumber());
         }
-        if (!updatedAssignment.getGithubUrl().equals(assignment.getGithubUrl())) {
+        if (updatedAssignment.getGithubUrl() != null) {
             assignment.setGithubUrl(updatedAssignment.getGithubUrl());
         }
-        if (!updatedAssignment.getStatus().equals(assignment.getStatus())) {
+        if (updatedAssignment.getStatus() != null) {
             assignment.setStatus(updatedAssignment.getStatus());
         }
-        if (!updatedAssignment.getReviewVideoUrl().equals(assignment.getReviewVideoUrl())) {
+        if (updatedAssignment.getReviewVideoUrl() != null) {
             assignment.setReviewVideoUrl(updatedAssignment.getReviewVideoUrl());
         }
-        if (!updatedAssignment.getUser().equals(assignment.getUser())) {
+        if (updatedAssignment.getUser() != null) {
             assignment.setUser(updatedAssignment.getUser());
         }
     }
 
     /**
-     * Allows Reviewer roles to update only the Code Reviewer (attaching their name to the assignment)
-     * or the status of the assignment
+     * Allows Reviewer roles to update the Code Reviewer (attaching their name to the assignment), the status of the
+     * assignment, or update the review video URL.
      * @param assignment the assignment to update
      * @param updatedAssignment the assignment with updated fields
      */
     private void updateReviewerFields(Assignment assignment, Assignment updatedAssignment) {
-        if (!updatedAssignment.getCodeReviewer().equals(assignment.getCodeReviewer())) {
+        if (updatedAssignment.getCodeReviewer() != null) {
             assignment.setCodeReviewer(updatedAssignment.getCodeReviewer());
         }
-        if (!updatedAssignment.getStatus().equals(assignment.getStatus())) {
+        if (updatedAssignment.getStatus() != null) {
             assignment.setStatus(updatedAssignment.getStatus());
+        }
+        if (updatedAssignment.getReviewVideoUrl() != null) {
+            assignment.setReviewVideoUrl(updatedAssignment.getReviewVideoUrl());
         }
     }
 
@@ -147,10 +161,10 @@ public class AssignmentService {
      * @param updatedAssignment the assignment with updated fields
      */
     private void updateLearnerFields(Assignment assignment, Assignment updatedAssignment) {
-        if (!updatedAssignment.getBranch().equals(assignment.getBranch())) {
+        if (updatedAssignment.getBranch() != null) {
             assignment.setBranch(updatedAssignment.getBranch());
         }
-        if (!updatedAssignment.getGithubUrl().equals(assignment.getGithubUrl())) {
+        if (updatedAssignment.getGithubUrl() != null) {
             assignment.setGithubUrl(updatedAssignment.getGithubUrl());
         }
     }

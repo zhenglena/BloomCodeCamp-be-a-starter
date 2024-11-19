@@ -3,6 +3,10 @@ package com.hcc.services;
 import com.hcc.dtos.AuthCredentialRequest;
 import com.hcc.dtos.AuthCredentialResponse;
 import com.hcc.utils.JwtUtil;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +23,11 @@ public class LoginService {
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
-    UserDetailServiceImpl userDetailServiceImp;
+    private UserDetailServiceImpl userDetailServiceImp;
     @Autowired
     private JwtUtil jwtUtil;
+
+    private final Logger log = LogManager.getLogger(LoginService.class);
 
     /**
      * Login endpoint. This will take the username and password from AuthCredentialRequest and authenticate it.
@@ -40,6 +46,7 @@ public class LoginService {
 
             return ResponseEntity.ok(new AuthCredentialResponse(token));
         } catch (AuthenticationException e) {
+            log.error("Login error: ", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         }
     }
@@ -58,12 +65,18 @@ public class LoginService {
             boolean isValid = jwtUtil.validateToken(token, userDetails);
 
             if (isValid) {
-                return ResponseEntity.ok("Token is valid");
+                return ResponseEntity.ok("Authentication successful");
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token");
+                log.error("Invalid token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
             }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+        } catch (ExpiredJwtException e) {
+            log.error("Token has expired: ", e);
+        } catch (UsernameNotFoundException e) {
+            log.error("No username found: ", e);
+        } catch (JwtException | IllegalArgumentException e) {
+            log.error("Token validation error: ", e);
         }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
     }
 }
