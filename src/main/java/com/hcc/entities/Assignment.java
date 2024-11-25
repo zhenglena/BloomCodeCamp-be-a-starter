@@ -36,14 +36,16 @@ public class Assignment {
      * @param branch the branch of the assignment
      * @param reviewVideoUrl the url of the video
      * @param user the user
+     * @param codeReviewer the reviewer
      */
-    public Assignment(String status, Integer number, String githubUrl, String branch, String reviewVideoUrl, User user) {
+    public Assignment(String status, Integer number, String githubUrl, String branch, String reviewVideoUrl, User user, User codeReviewer) {
         this.status = status;
         this.number = number;
         this.githubUrl = githubUrl;
         this.branch = branch;
         this.reviewVideoUrl = reviewVideoUrl;
         this.user = user;
+        this.codeReviewer = codeReviewer;
     }
 
     public Long getId() {

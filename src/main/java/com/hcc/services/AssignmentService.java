@@ -1,9 +1,11 @@
 package com.hcc.services;
 
+import com.hcc.dtos.AssignmentResponseDto;
 import com.hcc.entities.Assignment;
 import com.hcc.entities.User;
 import com.hcc.exceptions.ResourceNotFoundException;
 import com.hcc.exceptions.UnauthorizedUpdateException;
+import com.hcc.mappers.AssignmentMapper;
 import com.hcc.repositories.AssignmentRepository;
 import com.hcc.repositories.UserRepository;
 import org.apache.logging.log4j.LogManager;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,7 +28,9 @@ public class AssignmentService {
     @Autowired
     private UserRepository userRepository;
 
-    private final Logger log = LogManager.getLogger(LoginService.class);
+    private final AssignmentMapper mapper = new AssignmentMapper();
+
+    private final Logger log = LogManager.getLogger(AssignmentService.class);
 
     /**
      * Retrieves the list of Assignments that are associated with a user ID.
@@ -35,7 +40,7 @@ public class AssignmentService {
      * @param userId the user ID of where to retrieve the assignments
      * @return 200 OK response with List of Assignments.
      */
-    public ResponseEntity<List<Assignment>> getAssignmentsByUserId(Long userId) {
+    public List<AssignmentResponseDto> getAssignmentsByUserId(Long userId) {
         boolean exists = userRepository.findById(userId).isPresent();
         if (!exists) {
             log.error("User ID does not exist");
@@ -45,10 +50,9 @@ public class AssignmentService {
         List<Assignment> assignments = assignmentRepository.findByUserId(userId);
         if (assignments.isEmpty()) {
             log.info("No assignments found for user");
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.ok(assignments);
         }
+
+        return mapper.toDtoList(assignments);
     }
 
     /**
@@ -56,25 +60,26 @@ public class AssignmentService {
      * @param id the ID of the assignment
      * @return 200 OK response with Assignment
      */
-    public ResponseEntity<Assignment> getAssignmentById(Long id) {
+    public AssignmentResponseDto getAssignmentById(Long id) {
         Optional<Assignment> assignmentOptional = assignmentRepository.findById(id);
         if (assignmentOptional.isEmpty()) {
             log.error("Assignment doesn't exist");
             throw new ResourceNotFoundException("Assignment with ID " + id + " does not exist");
         } else {
-            return ResponseEntity.ok(assignmentOptional.get());
+            return mapper.toDto(assignmentOptional.get());
         }
     }
 
 
-    public ResponseEntity<Assignment> putAssignmentById(Assignment updatedAssignment, Long id, User user) {
+    public AssignmentResponseDto putAssignmentById(Assignment updatedAssignment, Long id, User user) {
         if (!Objects.equals(updatedAssignment.getId(), id)) {
             log.error("Updated assignment ID does not match ID provided");
             throw new UnauthorizedUpdateException("Updated assignment ID " + updatedAssignment.getId() +
                     " does not match argument: " + id);
         }
 
-        Assignment assignment = getAssignmentById(id).getBody();
+        Assignment assignment = mapper.toAssignment(getAssignmentById(id));
+        assignment.setId(id);
 
         if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
             updateAdminFields(assignment, updatedAssignment);
@@ -90,7 +95,7 @@ public class AssignmentService {
         }
 
         assignmentRepository.save(assignment);
-        return ResponseEntity.ok(assignment);
+        return mapper.toDto(assignment);
     }
 
     /**
@@ -98,14 +103,14 @@ public class AssignmentService {
      * @param assignment the new Assignment
      * @return the added Assignment
      */
-    public ResponseEntity<Assignment> postAssignment(Assignment assignment) {
+    public AssignmentResponseDto postAssignment(Assignment assignment) {
         try {
             assignmentRepository.save(assignment);
         } catch (IllegalArgumentException e) {
             log.error("Empty body in the assignment: ", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(assignment);
+            return null;
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(assignment);
+        return mapper.toDto(assignment);
     }
 
     /**

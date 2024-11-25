@@ -1,39 +1,90 @@
 package com.hcc.dtos;
 
 import com.hcc.entities.Assignment;
+import com.hcc.entities.User;
 import com.hcc.enums.AssignmentEnum;
 import com.hcc.enums.AssignmentStatusEnum;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class AssignmentResponseDto {
-    private Assignment assignment;
-    private AssignmentEnum[] assignmentEnums = AssignmentEnum.values();
-    private AssignmentStatusEnum[] statusEnums = AssignmentStatusEnum.values();
+    private Integer number;
+    private String status;
+    private String githubUrl;
+    private String branch;
+    private String reviewVideoUrl;
+    private User user;
+    private User codeReviewer;
 
-    /**
-     * Constructor
-     * @param assignment the assignment
-     */
-    public AssignmentResponseDto(Assignment assignment) {
-        this.assignment = assignment;
+    public Integer getNumber() {
+        return number;
     }
 
-    public Assignment getAssignment() {
-        return assignment;
+    public void setNumber(Integer number) {
+        this.number = number;
     }
 
-    public void setAssignment(Assignment assignment) {
-        this.assignment = assignment;
+    public String getStatus() {
+        return status;
     }
 
-    public AssignmentEnum[] getAssignmentEnums() {
-        return assignmentEnums;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
-    public AssignmentStatusEnum[] getAssignmentStatusEnums() {
-        return statusEnums;
+    public String getGithubUrl() {
+        return githubUrl;
+    }
+
+    public void setGithubUrl(String githubUrl) {
+        this.githubUrl = githubUrl;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
+
+    public String getReviewVideoUrl() {
+        return reviewVideoUrl;
+    }
+
+    public void setReviewVideoUrl(String reviewVideoUrl) {
+        this.reviewVideoUrl = reviewVideoUrl;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public User getCodeReviewer() {
+        return codeReviewer;
+    }
+
+    public void setCodeReviewer(User codeReviewer) {
+        this.codeReviewer = codeReviewer;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AssignmentResponseDto that = (AssignmentResponseDto) o;
+        return Objects.equals(getNumber(), that.getNumber()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getGithubUrl(), that.getGithubUrl()) && Objects.equals(getBranch(), that.getBranch()) && Objects.equals(getReviewVideoUrl(), that.getReviewVideoUrl()) && Objects.equals(getUser(), that.getUser()) && Objects.equals(getCodeReviewer(), that.getCodeReviewer());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getNumber(), getStatus(), getGithubUrl(), getBranch(), getReviewVideoUrl(), getUser(), getCodeReviewer());
     }
 }
