@@ -24,10 +24,4 @@ public class AssignmentExceptionController extends ResponseEntityExceptionHandle
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(e.getMessage());
     }
-
-    @ExceptionHandler(value = IllegalArgumentException.class)
-    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(e.getMessage());
-    }
 }

@@ -1,13 +1,6 @@
 package com.hcc.dtos;
 
-import com.hcc.entities.Assignment;
 import com.hcc.entities.User;
-import com.hcc.enums.AssignmentEnum;
-import com.hcc.enums.AssignmentStatusEnum;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 public class AssignmentResponseDto {

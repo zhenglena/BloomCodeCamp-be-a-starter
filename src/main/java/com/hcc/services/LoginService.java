@@ -35,20 +35,19 @@ public class LoginService {
      * @param request the username and password
      * @return an OK from ResponseEntity if validated
      */
-    public ResponseEntity<?> login(AuthCredentialRequest request) {
+    public AuthCredentialResponse login(AuthCredentialRequest request) {
+        String token = "";
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
 
             //Generate JWT token
-            String token = jwtUtil.generateToken((UserDetails) authentication.getPrincipal());
-
-            return ResponseEntity.ok(new AuthCredentialResponse(token));
+            token = jwtUtil.generateToken((UserDetails) authentication.getPrincipal());
         } catch (AuthenticationException e) {
             log.error("Login error: ", e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         }
+        return new AuthCredentialResponse(token);
     }
 
     /**
@@ -58,18 +57,17 @@ public class LoginService {
      * @param token the token to authenticate
      * @return a 200 OK Status if validated, or else a 401 Unauthorized status
      */
-    public ResponseEntity<?> validateToken(String token) {
+    public boolean validateToken(String token) {
+        boolean isValid = false;
         try {
             String username = jwtUtil.getUsernameFromToken(token);
             UserDetails userDetails = userDetailServiceImp.loadUserByUsername(username);
-            boolean isValid = jwtUtil.validateToken(token, userDetails);
+            isValid = jwtUtil.validateToken(token, userDetails);
 
-            if (isValid) {
-                return ResponseEntity.ok("Authentication successful");
-            } else {
+            if (!isValid) {
                 log.error("Invalid token");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
             }
+
         } catch (ExpiredJwtException e) {
             log.error("Token has expired: ", e);
         } catch (UsernameNotFoundException e) {
@@ -77,6 +75,7 @@ public class LoginService {
         } catch (JwtException | IllegalArgumentException e) {
             log.error("Token validation error: ", e);
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
+
+        return isValid;
     }
 }

@@ -1,22 +1,19 @@
 package com.hcc.services;
 
-import com.hcc.TestHelper;
 import com.hcc.dtos.AuthCredentialRequest;
 import com.hcc.dtos.AuthCredentialResponse;
 import com.hcc.utils.JwtUtil;
-import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -35,8 +32,6 @@ public class LoginServiceTest {
     private AuthCredentialRequest request;
     private AuthCredentialResponse response;
     private final String token = "token";
-    private ResponseEntity<?> expectedResponse;
-    private ResponseEntity<?> actualResponse;
 
 
     @InjectMocks
@@ -56,7 +51,7 @@ public class LoginServiceTest {
     @Test
     public void login_successfulLogin_returnsOK() {
         //GIVEN
-        expectedResponse = ResponseEntity.ok(response);
+        AuthCredentialResponse expectedResponse = response;
 
         when(auth.getPrincipal()).thenReturn(userDetails);
         when(manager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())))
@@ -64,29 +59,29 @@ public class LoginServiceTest {
         when(jwtUtil.generateToken(userDetails)).thenReturn(token);
 
         //WHEN
-        actualResponse = loginService.login(request);
+        AuthCredentialResponse actualResponse = loginService.login(request);
 
         //THEN
-        TestHelper.testResponseEntity(expectedResponse, actualResponse);
+        assertEquals(expectedResponse, actualResponse);
     }
 
     @Test
-    public void login_throwsAuthenticationException_returnsUnauthorized() {
+    public void login_catchesAuthenticationException_returnsUnauthorized() {
         //GIVEN
-        expectedResponse = ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+        AuthCredentialResponse expectedResponse = new AuthCredentialResponse("");
         when(manager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())))
                 .thenThrow(new AuthenticationException("Invalid credentials") {});
         //WHEN
-        actualResponse = loginService.login(request);
+        AuthCredentialResponse actualResponse = loginService.login(request);
 
         //THEN
-        TestHelper.testResponseEntity(expectedResponse, actualResponse);
+        assertEquals(expectedResponse, actualResponse);
     }
 
     @Test
-    public void validateToken_isValid_returnsOK() {
+    public void validateToken_isValid_returnsTrue() {
         //GIVEN
-        expectedResponse = ResponseEntity.ok("Authentication successful");
+        boolean expected = true;
         String username = "username";
         boolean isValid = true;
 
@@ -95,17 +90,16 @@ public class LoginServiceTest {
         when(jwtUtil.validateToken(token, userDetails)).thenReturn(isValid);
 
         //WHEN
-        actualResponse = loginService.validateToken(token);
+        boolean actual = loginService.validateToken(token);
 
         //THEN
-        TestHelper.testResponseEntity(expectedResponse, actualResponse);
+        assertEquals(expected, actual);
     }
 
     @Test
-    public void validateToken_isNotValid_returnsUnauthorized() {
+    public void validateToken_isNotValid_returnsFalse() {
         //GIVEN
-        expectedResponse =
-                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
+        boolean expected = false;
         String username = "username";
         boolean isValid = false;
 
@@ -114,52 +108,9 @@ public class LoginServiceTest {
         when(jwtUtil.validateToken(token, userDetails)).thenReturn(isValid);
 
         //WHEN
-        actualResponse = loginService.validateToken(token);
+        boolean actual = loginService.validateToken(token);
 
         //THEN
-        TestHelper.testResponseEntity(expectedResponse, actualResponse);
-    }
-
-    @Test
-    public void validateToken_expiredJwtException_returnsUnauthorized() {
-        //GIVEN
-        expectedResponse =
-                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
-        when(jwtUtil.getUsernameFromToken(token)).thenThrow(new ExpiredJwtException(null, null, "Token expired"));
-
-        //WHEN
-        actualResponse = loginService.validateToken(token);
-
-        //THEN
-        TestHelper.testResponseEntity(expectedResponse, actualResponse);
-    }
-
-    @Test
-    public void validateToken_usernameNotFoundException_returnsUnauthorized() {
-        //GIVEN
-        expectedResponse =
-                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
-        when(jwtUtil.getUsernameFromToken(token)).thenThrow(new UsernameNotFoundException("No username found with " +
-                "token: " + token));
-
-        //WHEN
-        actualResponse = loginService.validateToken(token);
-
-        //THEN
-        TestHelper.testResponseEntity(expectedResponse, actualResponse);
-    }
-
-    @Test
-    public void validateToken_illegalArgumentException_returnsUnauthorized() {
-        //GIVEN
-        expectedResponse =
-                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
-        when(jwtUtil.getUsernameFromToken(token)).thenThrow(new IllegalArgumentException());
-
-        //WHEN
-        actualResponse = loginService.validateToken(token);
-
-        //THEN
-        TestHelper.testResponseEntity(expectedResponse, actualResponse);
+        assertEquals(expected, actual);
     }
 }

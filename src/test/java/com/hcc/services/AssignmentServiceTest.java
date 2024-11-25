@@ -1,6 +1,5 @@
 package com.hcc.services;
 
-import com.hcc.TestHelper;
 import com.hcc.dtos.AssignmentResponseDto;
 import com.hcc.entities.Assignment;
 import com.hcc.entities.Authority;
@@ -16,8 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import java.util.ArrayList;
 import java.util.List;
