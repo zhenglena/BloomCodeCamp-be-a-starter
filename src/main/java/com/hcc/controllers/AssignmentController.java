@@ -43,9 +43,13 @@ public class AssignmentController {
     @PutMapping("{id}")
     public ResponseEntity<?> putAssignmentById(@RequestBody Assignment assignment, @PathVariable("id") Long id,
                                                @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required. User is not " +
+                    "authenticated");
+        }
         Optional<User> user = userRepository.findByUsername(userDetails.getUsername());
         if (user.isEmpty()) {
-            throw new ResourceNotFoundException("user not found");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found or unauthorized");
         }
         AssignmentResponseDto dto = assignmentService.putAssignmentById(assignment, id, user.get());
         return ResponseEntity.ok(dto);

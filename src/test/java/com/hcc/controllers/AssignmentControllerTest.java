@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -142,6 +143,39 @@ public class AssignmentControllerTest {
                 .andExpect(status().isOk());
 
         verify(assignmentService).putAssignmentById(updated, assignmentId, user);
+    }
+
+    @Test
+    public void putAssignment_userNotAuthenticated_returnsUnauthorized() throws Exception {
+        Assignment assignment = assignmentList.get(0);
+        UserDetails userDetails = mock(UserDetails.class);
+        String json = objectMapper.writeValueAsString(assignment);
+        mockMvc.perform(MockMvcRequestBuilders
+                .put("/api/assignments/{id}", 123L)
+                .content(json).contentType(MediaType.APPLICATION_JSON)
+                .with(user(userDetails)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void putAssignment_userNotFound_returnsUnauthorized() throws Exception {
+        UserDetails userDetails = mock(UserDetails.class);
+        Assignment assignment = assignmentList.get(0);
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(userDetails.getUsername()).thenReturn("mockUsername");
+        when(userRepository.findByUsername("mockUsername")).thenReturn(Optional.empty());
+
+        String json = objectMapper.writeValueAsString(assignment);
+        mockMvc.perform(MockMvcRequestBuilders
+                .put("/api/assignments/{id}", 123L)
+                .content(json).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
