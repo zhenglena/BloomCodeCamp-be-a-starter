@@ -2,14 +2,19 @@ package com.hcc.controllers;
 import com.hcc.dtos.AssignmentResponseDto;
 import com.hcc.entities.Assignment;
 import com.hcc.entities.User;
+import com.hcc.exceptions.ResourceNotFoundException;
+import com.hcc.repositories.UserRepository;
 import com.hcc.services.AssignmentService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @RestController
@@ -17,6 +22,8 @@ import java.util.List;
 public class AssignmentController {
     @Autowired
     AssignmentService assignmentService;
+    @Autowired
+    UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<?> getAssignmentsByUserId(@RequestBody Long userId) {
@@ -34,8 +41,13 @@ public class AssignmentController {
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<?> putAssignmentById(@RequestBody Assignment assignment, @PathVariable("id") Long id, User user) {
-        AssignmentResponseDto dto = assignmentService.putAssignmentById(assignment, id, user);
+    public ResponseEntity<?> putAssignmentById(@RequestBody Assignment assignment, @PathVariable("id") Long id,
+                                               @AuthenticationPrincipal UserDetails userDetails) {
+        Optional<User> user = userRepository.findByUsername(userDetails.getUsername());
+        if (user.isEmpty()) {
+            throw new ResourceNotFoundException("user not found");
+        }
+        AssignmentResponseDto dto = assignmentService.putAssignmentById(assignment, id, user.get());
         return ResponseEntity.ok(dto);
     }
 

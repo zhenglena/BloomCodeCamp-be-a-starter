@@ -126,13 +126,14 @@ public class AssignmentServiceTest {
     }
 
     @Test
-    public void putAssignmentById_noAssignmentId_throwsIllegalArgumentException() {
+    public void putAssignmentById_mismatchedId_throwsUnauthorizedUpdateException() {
         //GIVEN
-        when(userRepo.findById(learner.getId())).thenReturn(Optional.of(learner));
+        Long providedID = 125L;
+
         //WHEN
         //THEN
-        assertThrows(IllegalArgumentException.class, () -> service.putAssignmentById(new Assignment(),
-                learner.getId()));
+        assertThrows(UnauthorizedUpdateException.class, () -> service.putAssignmentById(updatedAssignment, providedID,
+                learner));
     }
 
 
@@ -143,15 +144,13 @@ public class AssignmentServiceTest {
         List<Authority> adminAuth = new ArrayList<>();
         adminAuth.add(new Authority(AuthorityEnum.ROLE_ADMIN.name()));
         admin.setAuthorities(adminAuth);
-        admin.setId(123L);
 
         AssignmentResponseDto expected = mapper.toDto(updatedAssignment);
 
-        when(userRepo.findById(admin.getId())).thenReturn(Optional.of(admin));
         when(assignmentRepo.findById(assignmentID)).thenReturn(Optional.of(assignment));
 
         //WHEN
-        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, admin.getId());
+        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, assignmentID, admin);
 
         //THEN
         verify(assignmentRepo).save(updatedAssignment);
@@ -165,7 +164,6 @@ public class AssignmentServiceTest {
         List<Authority> reviewerAuth = new ArrayList<>();
         reviewerAuth.add(new Authority(AuthorityEnum.ROLE_REVIEWER.name()));
         reviewer.setAuthorities(reviewerAuth);
-        reviewer.setId(123L);
 
         Assignment expectedAssignment = new Assignment(updatedAssignment.getStatus(), assignment.getNumber(),
                 assignment.getGithubUrl(), assignment.getBranch(), updatedAssignment.getReviewVideoUrl(),
@@ -174,11 +172,10 @@ public class AssignmentServiceTest {
 
         AssignmentResponseDto expected = mapper.toDto(expectedAssignment);
 
-        when(userRepo.findById(reviewer.getId())).thenReturn(Optional.of(reviewer));
         when(assignmentRepo.findById(assignmentID)).thenReturn(Optional.of(assignment));
 
         //WHEN
-        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, reviewer.getId());
+        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, assignmentID, reviewer);
 
         //THEN
         verify(assignmentRepo).save(expectedAssignment);
@@ -200,11 +197,10 @@ public class AssignmentServiceTest {
 
         AssignmentResponseDto expected = mapper.toDto(expectedAssignment);
 
-        when(userRepo.findById(learner.getId())).thenReturn(Optional.of(learner));
         when(assignmentRepo.findById(assignmentID)).thenReturn(Optional.of(assignment));
 
         //WHEN
-        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, learner.getId());
+        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, assignmentID, learner);
 
         //THEN
         verify(assignmentRepo).save(expectedAssignment);

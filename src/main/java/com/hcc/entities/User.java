@@ -21,7 +21,7 @@ public class User implements UserDetails {
     private String username;
     private String password;
 
-    @Transient
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Authority> authorities;
     /**
      * no-args
