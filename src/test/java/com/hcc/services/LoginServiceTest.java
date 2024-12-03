@@ -66,7 +66,7 @@ public class LoginServiceTest {
     }
 
     @Test
-    public void login_catchesAuthenticationException_returnsUnauthorized() {
+    public void login_catchesAuthenticationException_returnsEmptyString() {
         //GIVEN
         AuthCredentialResponse expectedResponse = new AuthCredentialResponse("");
         when(manager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())))

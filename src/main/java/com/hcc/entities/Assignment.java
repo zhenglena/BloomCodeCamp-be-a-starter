@@ -8,6 +8,7 @@ import java.util.Objects;
 public class Assignment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "assignment_id")
     private Long id;
     private String status;
     private Integer number;
@@ -17,10 +18,8 @@ public class Assignment {
     @Column(name = "video_url")
     private String reviewVideoUrl;
     @ManyToOne
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "user_id")
     private User user;
-    @ManyToOne
-    @JoinColumn(name = "id")
     private User codeReviewer;
 
     /**

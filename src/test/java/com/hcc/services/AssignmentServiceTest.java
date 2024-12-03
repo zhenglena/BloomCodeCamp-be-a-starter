@@ -35,9 +35,9 @@ public class AssignmentServiceTest {
     private AssignmentService service;
 
     private AssignmentMapper mapper;
-    private User learner;
+    private static User learner;
     private User admin;
-    private User reviewer;
+    private static User reviewer;
     private Assignment assignment;
     private Assignment updatedAssignment;
     private Long assignmentID;
@@ -126,14 +126,13 @@ public class AssignmentServiceTest {
     }
 
     @Test
-    public void putAssignmentById_mismatchedId_throwsUnauthorizedUpdateException() {
+    public void putAssignmentById_noAssignmentId_throwsIllegalArgumentException() {
         //GIVEN
-        Long providedID = 125L;
-
+        when(userRepo.findById(learner.getId())).thenReturn(Optional.of(learner));
         //WHEN
         //THEN
-        assertThrows(UnauthorizedUpdateException.class, () -> service.putAssignmentById(updatedAssignment, providedID,
-                learner));
+        assertThrows(IllegalArgumentException.class, () -> service.putAssignmentById(new Assignment(),
+                learner.getId()));
     }
 
 
@@ -144,13 +143,15 @@ public class AssignmentServiceTest {
         List<Authority> adminAuth = new ArrayList<>();
         adminAuth.add(new Authority(AuthorityEnum.ROLE_ADMIN.name()));
         admin.setAuthorities(adminAuth);
+        admin.setId(123L);
 
         AssignmentResponseDto expected = mapper.toDto(updatedAssignment);
 
+        when(userRepo.findById(admin.getId())).thenReturn(Optional.of(admin));
         when(assignmentRepo.findById(assignmentID)).thenReturn(Optional.of(assignment));
 
         //WHEN
-        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, assignmentID, admin);
+        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, admin.getId());
 
         //THEN
         verify(assignmentRepo).save(updatedAssignment);
@@ -164,6 +165,7 @@ public class AssignmentServiceTest {
         List<Authority> reviewerAuth = new ArrayList<>();
         reviewerAuth.add(new Authority(AuthorityEnum.ROLE_REVIEWER.name()));
         reviewer.setAuthorities(reviewerAuth);
+        reviewer.setId(123L);
 
         Assignment expectedAssignment = new Assignment(updatedAssignment.getStatus(), assignment.getNumber(),
                 assignment.getGithubUrl(), assignment.getBranch(), updatedAssignment.getReviewVideoUrl(),
@@ -172,10 +174,11 @@ public class AssignmentServiceTest {
 
         AssignmentResponseDto expected = mapper.toDto(expectedAssignment);
 
+        when(userRepo.findById(reviewer.getId())).thenReturn(Optional.of(reviewer));
         when(assignmentRepo.findById(assignmentID)).thenReturn(Optional.of(assignment));
 
         //WHEN
-        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, assignmentID, reviewer);
+        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, reviewer.getId());
 
         //THEN
         verify(assignmentRepo).save(expectedAssignment);
@@ -197,10 +200,11 @@ public class AssignmentServiceTest {
 
         AssignmentResponseDto expected = mapper.toDto(expectedAssignment);
 
+        when(userRepo.findById(learner.getId())).thenReturn(Optional.of(learner));
         when(assignmentRepo.findById(assignmentID)).thenReturn(Optional.of(assignment));
 
         //WHEN
-        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, assignmentID, learner);
+        AssignmentResponseDto actual = service.putAssignmentById(updatedAssignment, learner.getId());
 
         //THEN
         verify(assignmentRepo).save(expectedAssignment);
@@ -229,7 +233,7 @@ public class AssignmentServiceTest {
         assertNull(actual);
     }
 
-    private List<Assignment> initializeAssignmentList() {
+    public static List<Assignment> initializeAssignmentList() {
         //create links
         String github = "github.com";
         String branch = "branch";

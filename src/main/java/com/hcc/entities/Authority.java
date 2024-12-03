@@ -11,10 +11,11 @@ import java.util.Objects;
 public class Authority implements GrantedAuthority {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "authority_id")
     private Long id;
     private String authority; //leave it as String bc this is implementing GrantedAuthority and it's more consistent
     @ManyToOne
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "user_id")
     private User user;
 
     /**

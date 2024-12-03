@@ -18,9 +18,9 @@ public class LoginController {
     public ResponseEntity<?> login(@RequestBody AuthCredentialRequest request) {
         AuthCredentialResponse response = loginService.login(request);
         if (response.getToken().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(request);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid login");
         } else {
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.OK).body("Successful login");
         }
     }
 
