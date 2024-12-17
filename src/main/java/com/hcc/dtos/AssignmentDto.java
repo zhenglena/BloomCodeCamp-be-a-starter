@@ -3,6 +3,11 @@ package com.hcc.dtos;
 import com.hcc.entities.User;
 import java.util.Objects;
 
+/**
+ * This is a general DTO. This is used with updating Assignments or retrieving Assignments from the database.
+ * It only shows relevant information to both Learners and Reviewers so that they can update specific fields.
+ * The rest is not shown to the user as they won't be able to edit it anyway.
+ */
 public class AssignmentDto {
     private String status;
     private String githubUrl;

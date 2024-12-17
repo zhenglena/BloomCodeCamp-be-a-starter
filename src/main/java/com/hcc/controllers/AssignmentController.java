@@ -27,6 +27,14 @@ public class AssignmentController {
     @Autowired
     UserRepository userRepository;
 
+    /**
+     * This will retrieve Assignments depending on the User and their authority level.
+     * If a Learner is retrieving, then all Assignments under their name will be shown.
+     * If a Reviewer is retrieving, it'll need a status to query.
+     * @param userDetails The user logged in
+     * @param status the status to be queried from the db
+     * @return 204 No Content if List is empty, otherwise a 200 OK status
+     */
     @GetMapping
     public ResponseEntity<?> getAssignmentsByUser(@AuthenticationPrincipal UserDetails userDetails,
                                                   @RequestParam(name = "status", required = false) String status) {
@@ -40,6 +48,9 @@ public class AssignmentController {
 
         //If User is REVIEWER
         if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_REVIEWER"))) {
+            if (status.isEmpty()) {
+                return
+            }
             dtoList = assignmentService.getAssignmentsByStatus(user, status);
         }
 
@@ -50,12 +61,24 @@ public class AssignmentController {
 
     }
 
+    /**
+     * This will retrieve assignments by their ID.
+     * @param id the ID of the Assignment
+     * @return 200 OK status when retrieved
+     */
     @GetMapping("{id}")
     public ResponseEntity<?> getAssignmentById(@PathVariable("id") Long id) {
         AssignmentDto dto = assignmentService.getAssignmentById(id);
         return ResponseEntity.ok(dto);
     }
 
+    /**
+     * This will update Assignments according to the User's authority.
+     * @param updateDto The assignmentDTO with updated fields
+     * @param id the ID of the Assignment to be updated
+     * @param userDetails the User logged on
+     * @return 200 OK status
+     */
     @PutMapping("{id}")
     public ResponseEntity<?> updateAssignmentById(@RequestBody AssignmentDto updateDto,
                                                   @PathVariable("id") Long id,
@@ -65,17 +88,26 @@ public class AssignmentController {
         return ResponseEntity.status(HttpStatus.OK).body(dto);
     }
 
+    /**
+     * This will be used by Learners ONLY to create assignments.
+     * @param createDto The DTO with specific fields for the Learner to input
+     * @param userDetails The logged on User
+     * @return 201 Created status
+     */
     @PostMapping
     public ResponseEntity<?> createAssignment(@RequestBody AssignmentCreateDto createDto,
                                               @AuthenticationPrincipal UserDetails userDetails) {
         User user = checkUser(userDetails);
         AssignmentDto dto = assignmentService.createAssignment(createDto, user);
-        if (dto == null) {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
+    /**
+     * This is a helper method to authenticate UserDetails
+     * @param userDetails the user to be authenticated
+     * @return the retrieved User from the database
+     */
     private User checkUser(UserDetails userDetails) {
         if (userDetails == null) {
             throw new UnauthorizedAccessException("Authentication required. User is not authenticated");

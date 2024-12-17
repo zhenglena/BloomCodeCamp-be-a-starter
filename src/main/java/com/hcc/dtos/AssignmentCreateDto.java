@@ -2,6 +2,11 @@ package com.hcc.dtos;
 
 import java.util.Objects;
 
+/**
+ * This class is for creation of Assignments. Since only Learners can create assignments, they have
+ * the option to add a GitHub url, branch url, and an assignment number.
+ * Their name and the assignment status (PENDING_SUBMISSION) is automatically registered with the assignment when created.
+ */
 public class AssignmentCreateDto {
     private String githubUrl;
     private String branch;
@@ -55,32 +60,4 @@ public class AssignmentCreateDto {
                 ", number=" + number +
                 '}';
     }
-
-//    public static class Builder {
-//        private String githubUrl;
-//        private String branch;
-//        private Integer number;
-//
-//        public Builder() {
-//        }
-//
-//        public Builder withGithubUrl(String githubUrl) {
-//            this.githubUrl = githubUrl;
-//            return this;
-//        }
-//
-//        public Builder withBranch(String branch) {
-//            this.branch = branch;
-//            return this;
-//        }
-//
-//        public Builder withNumber(Integer number) {
-//            this.number = number;
-//            return this;
-//        }
-//
-//        public AssignmentCreateDto build() {
-//            return new AssignmentCreateDto(this);
-//        }
-//    }
 }

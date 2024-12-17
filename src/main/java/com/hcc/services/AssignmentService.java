@@ -35,8 +35,7 @@ public class AssignmentService {
 
     /**
      * GET ENDPOINT for Learners
-     * Retrieves the list of Assignments that are associated with a Learner
-     * If the list comes back empty, then ResponseEntity will return a 204 No Content.
+     * Retrieves the list of Assignments that are associated with a Learner.
      * @param learner the user of where to retrieve the assignments from
      * @return List of Assignment DTOs
      */
@@ -55,8 +54,9 @@ public class AssignmentService {
     /**
      * GET ENDPOINT for Reviewers
      * Retrieves the List of Assignments by a status query (either SUBMITTED or RESUBMITTED).
+     * If status is empty, no assignments will be returned.
      * If SUBMITTED, any assignments with status SUBMITTED will be returned.
-     * IF RESUBMITTED, any assignments that is associated with the Reviewer and has the status RESUBMITTED will be
+     * If RESUBMITTED, any assignments that is associated with the Reviewer and has the status RESUBMITTED will be
      * returned.
      * If the list comes back empty, then ResponseEntity will return a 204 No Content.
      * @param status the status that is being queried
@@ -64,6 +64,7 @@ public class AssignmentService {
      */
     public List<AssignmentDto> getAssignmentsByStatus(User reviewer, String status) {
         List<Assignment> assignments = new ArrayList<>();
+
         if (status.equals(AssignmentStatusEnum.SUBMITTED.getStatus())) {
             log.info("Retrieving assignments with status: {}", status);
             assignments = assignmentRepository.findByStatus(status);
@@ -74,8 +75,10 @@ public class AssignmentService {
             assignments = assignmentRepository.findByReviewerIdAndStatus(reviewer.getId(), status);
         }
 
-        if (assignments.isEmpty()) {
-            log.info("No unclaimed submitted assignments");
+        if (status.isEmpty()) {
+            log.info("Status was not provided, no assignments retrieved");
+        } else if (assignments.isEmpty()) {
+            log.info("No assignments found with query {}", status);
         }
 
         log.info("Returning assignments...");
@@ -150,9 +153,9 @@ public class AssignmentService {
 
     /**
      * POST ENDPOINT
-     * Posts a new Assignment
-     * @param createDto the new Assignment
-     * @return the added Assignment
+     * Posts a new Assignment, automatically setting the User and the Status to start off.
+     * @param createDto the new Assignment with limited fields
+     * @return The created Assignment DTO
      */
     public AssignmentDto createAssignment(AssignmentCreateDto createDto, User user) {
         boolean isLearner = user.getAuthorities().stream()
