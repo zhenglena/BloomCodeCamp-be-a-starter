@@ -39,6 +39,9 @@ public class LoginControllerTest {
     private UserDetailServiceImpl userDetailService;
 
     @Test
+    void contextLoads() {}
+
+    @Test
     public void login_successful_returnsOK() throws Exception {
         //GIVEN
         AuthCredentialRequest request = new AuthCredentialRequest();

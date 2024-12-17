@@ -1,5 +1,6 @@
 package com.hcc.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hcc.enums.AuthorityEnum;
 import org.springframework.security.core.GrantedAuthority;
 
@@ -12,10 +13,12 @@ public class Authority implements GrantedAuthority {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "authority_id")
+    @JsonIgnore
     private Long id;
     private String authority; //leave it as String bc this is implementing GrantedAuthority and it's more consistent
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
 
     /**

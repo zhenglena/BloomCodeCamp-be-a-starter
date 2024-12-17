@@ -1,48 +1,36 @@
 package com.hcc.mappers;
 
-import com.hcc.dtos.AssignmentResponseDto;
+import com.hcc.dtos.AssignmentCreateDto;
+import com.hcc.dtos.AssignmentDto;
 import com.hcc.entities.Assignment;
-import org.springframework.context.annotation.Bean;
+import com.hcc.enums.AssignmentStatusEnum;
+import org.mapstruct.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class AssignmentMapper {
+@Mapper(componentModel = "spring", imports = AssignmentStatusEnum.class)
+public interface AssignmentMapper {
 
-    public AssignmentResponseDto toDto(Assignment assignment) {
-        AssignmentResponseDto dto = new AssignmentResponseDto();
-        dto.setBranch(assignment.getBranch());
-        dto.setUser(assignment.getUser());
-        dto.setCodeReviewer(assignment.getCodeReviewer());
-        dto.setStatus(assignment.getStatus());
-        dto.setGithubUrl(assignment.getGithubUrl());
-        dto.setReviewVideoUrl(assignment.getReviewVideoUrl());
-        dto.setNumber(assignment.getNumber());
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateAssignment(AssignmentDto dto, @MappingTarget Assignment assignment);
 
-        return dto;
-    }
+    @Mapping(target = "status", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateLearnerFields(AssignmentDto dto, @MappingTarget Assignment source);
 
-    public Assignment toAssignment(AssignmentResponseDto dto) {
-        return new Assignment(
-                dto.getStatus(),
-                dto.getNumber(),
-                dto.getGithubUrl(),
-                dto.getBranch(),
-                dto.getReviewVideoUrl(),
-                dto.getUser(),
-                dto.getCodeReviewer()
-        );
-    }
+    @Mapping(target = "reviewVideoUrl", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateReviewerFields(AssignmentDto dto, @MappingTarget Assignment source);
 
-    public List<AssignmentResponseDto> toDtoList(List<Assignment> assignments) {
-        return assignments.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-    }
+    AssignmentDto toDto(Assignment assignment);
 
-    public List<Assignment> toAssignmentList(List<AssignmentResponseDto> dtos) {
-        return dtos.stream()
-                .map(this::toAssignment)
-                .collect(Collectors.toList());
-    }
+    Assignment toAssignment(AssignmentDto dto);
+
+    List<AssignmentDto> toDtoList(List<Assignment> assignments);
+
+    List<Assignment> toAssignmentList(List<AssignmentDto> assignmentDtos);
+
+    AssignmentCreateDto toCreateDto(Assignment assignment);
+
+    Assignment toAssignment(AssignmentCreateDto dto);
 }

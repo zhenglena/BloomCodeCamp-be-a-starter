@@ -1,17 +1,22 @@
 package com.hcc.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hcc.dtos.AssignmentCreateDto;
+import com.hcc.dtos.AssignmentDto;
 import com.hcc.entities.Assignment;
 import com.hcc.entities.Authority;
 import com.hcc.entities.User;
+import com.hcc.enums.AssignmentStatusEnum;
 import com.hcc.enums.AuthorityEnum;
+import com.hcc.exceptions.UnauthorizedAccessException;
 import com.hcc.mappers.AssignmentMapper;
 import com.hcc.repositories.AssignmentRepository;
 import com.hcc.repositories.UserRepository;
 import com.hcc.services.AssignmentService;
-import com.hcc.services.AssignmentServiceTest;
 import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,9 +33,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -46,50 +53,80 @@ public class AssignmentControllerTest {
     @MockBean
     private UserRepository userRepository;
 
-    private final List<Assignment> assignmentList = AssignmentServiceTest.initializeAssignmentList();
-    private final AssignmentMapper mapper = new AssignmentMapper();
+    private final AssignmentMapper mapper = Mappers.getMapper(AssignmentMapper.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private User learner;
+    private User reviewer;
+    private List<Assignment> assignmentList;
+    private UserDetails userDetails;
 
-    @Test
-    public void getAssignmentsByUserId_userExists_returnsList() throws Exception {
-        Long userId = 123L;
-        User user = mock(User.class);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(assignmentRepository.findByUserId(userId)).thenReturn(assignmentList);
-        when(assignmentService.getAssignmentsByUserId(userId)).thenReturn(mapper.toDtoList(assignmentList));
+    @BeforeEach
+    public void setup() {
+        learner = new User();
+        learner.setId(123L);
+        learner.setAuthorities(List.of(new Authority(AuthorityEnum.ROLE_LEARNER.name())));
 
-        String json = objectMapper.writeValueAsString(userId);
+        reviewer = new User();
+        reviewer.setId(234L);
+        reviewer.setAuthorities(List.of(new Authority(AuthorityEnum.ROLE_REVIEWER.name())));
 
-        mockMvc.perform(MockMvcRequestBuilders
-                .get("/api/assignments")
-                .content(json)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.size()", CoreMatchers.is(assignmentList.size())));
-
-        verify(assignmentService).getAssignmentsByUserId(userId);
+        assignmentList = initializeAssignmentList();
+        userDetails = mock(UserDetails.class);
     }
 
     @Test
-    public void getAssignmentsByUserId_noAssignments_returnsNoContent() throws Exception {
-        Long userId = 123L;
-        User user = mock(User.class);
-        List<Assignment> assignmentList = new ArrayList<>();
+    void contextLoads() {}
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(assignmentRepository.findByUserId(userId)).thenReturn(assignmentList);
-        when(assignmentService.getAssignmentsByUserId(userId)).thenReturn(mapper.toDtoList(assignmentList));
+    @Test
+    public void getAssignmentsByUser_learner_returnsList() throws Exception {
+        checkUserAuthentication(userDetails, learner);
 
+        when(assignmentRepository.findByUserId(learner.getId())).thenReturn(assignmentList);
+        when(assignmentService.getAssignmentsByLearner(learner)).thenReturn(mapper.toDtoList(assignmentList));
 
-        String json = objectMapper.writeValueAsString(userId);
+        mockMvc.perform(MockMvcRequestBuilders
+                .get("/api/assignments").with(user(userDetails)))
+                .andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.size()", CoreMatchers.is(assignmentList.size())));
+
+        verify(assignmentService).getAssignmentsByLearner(learner);
+    }
+
+    @Test
+    public void getAssignmentsByUser_noAssignments_returnsNoContent() throws Exception {
+        List<Assignment> mockList = new ArrayList<>();
+        checkUserAuthentication(userDetails, learner);
+
+        when(assignmentRepository.findByUserId(learner.getId())).thenReturn(mockList);
+        when(assignmentService.getAssignmentsByLearner(learner)).thenReturn(mapper.toDtoList(mockList));
+
+        mockMvc.perform(MockMvcRequestBuilders
+                        .get("/api/assignments").with(user(learner)))
+                .andExpect(status().isNoContent());
+
+        verify(assignmentService).getAssignmentsByLearner(learner);
+    }
+
+    @Test
+    public void getAssignmentsByUser_reviewer_returnsList() throws Exception {
+        String status = AssignmentStatusEnum.SUBMITTED.getStatus();
+
+        checkUserAuthentication(userDetails, reviewer);
+
+        List<Assignment> assignments =
+                assignmentList.stream().filter(a -> a.getStatus().equals(status)).collect(Collectors.toList());
+
+        when(assignmentRepository.findByStatus(status)).thenReturn(assignments);
+        when(assignmentService.getAssignmentsByStatus(reviewer, status)).thenReturn(mapper.toDtoList(assignments));
 
         mockMvc.perform(MockMvcRequestBuilders
                         .get("/api/assignments")
-                        .content(json)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
+                        .param("status", status)
+                        .with(user(userDetails)))
+                .andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.size()", CoreMatchers.is(assignments.size())));
 
-        verify(assignmentService).getAssignmentsByUserId(userId);
+        verify(assignmentService).getAssignmentsByStatus(reviewer, status);
     }
 
     @Test
@@ -111,45 +148,72 @@ public class AssignmentControllerTest {
     }
 
     @Test
-    public void putAssignment_successfulUpdate_returnsOK() throws Exception {
+    public void putAssignment_successfulLearnerUpdate_returnsOK() throws Exception {
         Long assignmentId = 123L;
-        UserDetails userDetails = mock(UserDetails.class);
-        User user = new User();
-        user.setAuthorities(List.of(new Authority(AuthorityEnum.ROLE_LEARNER.name())));
-
-        Assignment original = assignmentList.get(2);
+        Assignment original = new Assignment(AssignmentStatusEnum.NEEDS_UPDATE.getStatus(), 1, "github", "branch",
+                null, learner, reviewer);
         original.setId(assignmentId);
-        Assignment updated = assignmentList.get(4);
-        updated.setId(assignmentId);
 
-        Authentication authentication = mock(Authentication.class);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
+        AssignmentDto updated = new AssignmentDto();
+        updated.setStatus(AssignmentStatusEnum.RESUBMITTED.getStatus());
+        updated.setGithubUrl("github.com");
+        updated.setBranch("branch.com");
 
-        when(userDetails.getUsername()).thenReturn("mockUsername");
-        when(userRepository.findByUsername("mockUsername")).thenReturn(Optional.of(user));
-        when(assignmentRepository.findById(assignmentId)).thenReturn(Optional.of(original));
-        when(assignmentService.putAssignmentById(updated, assignmentId, user))
-                .thenReturn(mapper.toDto(updated));
+        Assignment expected = new Assignment(AssignmentStatusEnum.RESUBMITTED.getStatus(), 1, "github.com", "branch" +
+                ".com", null, learner, reviewer);
+
+        checkUserAuthentication(userDetails, learner);
+
+        doReturn(mapper.toDto(expected)).when(assignmentService).updateAssignmentById(updated, assignmentId, learner);
+        doReturn(Optional.of(original)).when(assignmentRepository).findById(assignmentId);
 
         String assignmentJson = objectMapper.writeValueAsString(updated);
 
         mockMvc.perform(MockMvcRequestBuilders
-                .put("/api/assignments/{id}", assignmentId)
+                .put("/api/assignments/{id}", assignmentId).with(user(userDetails))
                 .content(assignmentJson)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        verify(assignmentService).putAssignmentById(updated, assignmentId, user);
+        verify(assignmentService).updateAssignmentById(updated, assignmentId, learner);
+    }
+
+    @Test
+    public void putAssignment_successfulReviewerUpdate_returnsOK() throws Exception {
+        Long assignmentId = 123L;
+        Assignment original = new Assignment(AssignmentStatusEnum.SUBMITTED.getStatus(), 1, "github", "branch",
+                null, learner, null);
+        original.setId(assignmentId);
+
+        AssignmentDto updated = new AssignmentDto();
+        updated.setStatus(AssignmentStatusEnum.IN_REVIEW.getStatus());
+        updated.setCodeReviewer(reviewer);
+
+        Assignment expected = new Assignment(AssignmentStatusEnum.IN_REVIEW.getStatus(), 1, "github", "branch",
+                null, learner, reviewer);
+
+        checkUserAuthentication(userDetails, reviewer);
+
+        doReturn(mapper.toDto(expected)).when(assignmentService).updateAssignmentById(updated, assignmentId, learner);
+        doReturn(Optional.of(original)).when(assignmentRepository).findById(assignmentId);
+
+        String assignmentJson = objectMapper.writeValueAsString(updated);
+
+        mockMvc.perform(MockMvcRequestBuilders
+                        .put("/api/assignments/{id}", assignmentId).with(user(userDetails))
+                        .content(assignmentJson)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(assignmentService).updateAssignmentById(updated, assignmentId, reviewer);
     }
 
     @Test
     public void putAssignment_userNotAuthenticated_returnsUnauthorized() throws Exception {
-        Assignment assignment = assignmentList.get(0);
-        UserDetails userDetails = mock(UserDetails.class);
+        AssignmentDto assignment = mapper.toDto(assignmentList.get(0));
+
         String json = objectMapper.writeValueAsString(assignment);
+
         mockMvc.perform(MockMvcRequestBuilders
                 .put("/api/assignments/{id}", 123L)
                 .content(json).contentType(MediaType.APPLICATION_JSON)
@@ -158,9 +222,8 @@ public class AssignmentControllerTest {
     }
 
     @Test
-    public void putAssignment_userNotFound_returnsUnauthorized() throws Exception {
-        UserDetails userDetails = mock(UserDetails.class);
-        Assignment assignment = assignmentList.get(0);
+    public void putAssignment_userNotFound_returnsNotFound() throws Exception {
+        AssignmentDto assignment = mapper.toDto(assignmentList.get(0));
 
         Authentication authentication = mock(Authentication.class);
         when(authentication.getPrincipal()).thenReturn(userDetails);
@@ -175,15 +238,22 @@ public class AssignmentControllerTest {
         mockMvc.perform(MockMvcRequestBuilders
                 .put("/api/assignments/{id}", 123L)
                 .content(json).contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    public void postAssignment_savedSuccessfully_returnsCreated() throws Exception {
-        Assignment assignment = assignmentList.get(0);
-        assignment.setId(123L);
+    public void createAssignment_learner_returnsCreated() throws Exception {
+        AssignmentCreateDto assignment = new AssignmentCreateDto();
+        assignment.setNumber(1);
+        assignment.setBranch("branch");
+        assignment.setGithubUrl("github");
 
-        when(assignmentService.postAssignment(assignment)).thenReturn(mapper.toDto(assignment));
+        Assignment expectedAssignment = new Assignment(AssignmentStatusEnum.PENDING_SUBMISSION.getStatus(), 1,
+                "github", "branch", null, learner, null);
+
+        checkUserAuthentication(userDetails, learner);
+
+        when(assignmentService.createAssignment(assignment, learner)).thenReturn(mapper.toDto(expectedAssignment));
 
         String json = objectMapper.writeValueAsString(assignment);
 
@@ -192,26 +262,61 @@ public class AssignmentControllerTest {
                 .content(json)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
-                .andExpect(content().string(objectMapper.writeValueAsString(mapper.toDto(assignment))));
+                .andExpect(content().string(objectMapper.writeValueAsString(mapper.toDto(expectedAssignment))));
 
-        verify(assignmentService).postAssignment(assignment);
+        verify(assignmentService).createAssignment(assignment, learner);
     }
 
     @Test
-    public void postAssignment_emptyBody_returnsNoContent() throws Exception {
-        Assignment assignment = new Assignment();
+    public void createAssignment_reviewer_returnsUnauthorized() throws Exception {
+        AssignmentCreateDto assignment = new AssignmentCreateDto();
 
-        when(assignmentService.postAssignment(assignment)).thenReturn(null);
+        checkUserAuthentication(userDetails, reviewer);
+        when(assignmentService.createAssignment(assignment, reviewer)).thenThrow(UnauthorizedAccessException.class);
 
         String json = objectMapper.writeValueAsString(assignment);
 
         mockMvc.perform(MockMvcRequestBuilders
-                .post("/api/assignments")
-                .content(json)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
+                        .post("/api/assignments")
+                        .content(json)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
 
-        verify(assignmentService).postAssignment(assignment);
+        verify(assignmentService).createAssignment(assignment, reviewer);
+    }
+
+    private List<Assignment> initializeAssignmentList() {
+        //create links
+        String github = "github.com";
+        String branch = "branch";
+        String reviewVideoUrl = "review.com";
+
+        List<Assignment> assignments = new ArrayList<>();
+        assignments.add(new Assignment(AssignmentStatusEnum.RESUBMITTED.getStatus(), 1, github, branch,
+                null, learner, reviewer));
+        assignments.add(new Assignment(AssignmentStatusEnum.RESUBMITTED.getStatus(), 2, github, branch,
+                null, learner, null));
+        assignments.add(new Assignment(AssignmentStatusEnum.RESUBMITTED.getStatus(), 3, github, branch,
+                null, learner, learner));
+        assignments.add(new Assignment(AssignmentStatusEnum.NEEDS_UPDATE.getStatus(), 1, github, branch,
+                null, learner, reviewer));
+        assignments.add(new Assignment(AssignmentStatusEnum.SUBMITTED.getStatus(), 5, github, branch,
+                null, learner, null));
+        assignments.add(new Assignment(AssignmentStatusEnum.PENDING_SUBMISSION.getStatus(), 6, github,
+                branch, null, null, null));
+
+        return assignments;
+    }
+
+    private void checkUserAuthentication(UserDetails userDetails, User user) {
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(userDetails.getUsername()).thenReturn("mockUsername");
+        when(userRepository.findByUsername("mockUsername")).thenReturn(Optional.of(user));
     }
 
 }

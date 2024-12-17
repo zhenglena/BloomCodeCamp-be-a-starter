@@ -116,15 +116,11 @@ public class Assignment {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Assignment that = (Assignment) o;
-        return Objects.equals(getId(), that.getId()) && Objects.equals(getStatus(), that.getStatus())
-                && Objects.equals(getNumber(), that.getNumber()) && Objects.equals(getGithubUrl(), that.getGithubUrl())
-                && Objects.equals(getBranch(), that.getBranch()) && Objects.equals(getReviewVideoUrl(), that.getReviewVideoUrl())
-                && Objects.equals(getUser(), that.getUser()) && Objects.equals(getCodeReviewer(), that.getCodeReviewer());
+        return Objects.equals(getId(), that.getId()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getNumber(), that.getNumber()) && Objects.equals(getGithubUrl(), that.getGithubUrl()) && Objects.equals(getBranch(), that.getBranch()) && Objects.equals(getReviewVideoUrl(), that.getReviewVideoUrl()) && Objects.equals(getUser(), that.getUser()) && Objects.equals(getCodeReviewer(), that.getCodeReviewer());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getStatus(), getNumber(), getGithubUrl(), getBranch(), getReviewVideoUrl(),
-                getUser(), getCodeReviewer());
+        return Objects.hash(getId(), getStatus(), getNumber(), getGithubUrl(), getBranch(), getReviewVideoUrl(), getUser(), getCodeReviewer());
     }
 }

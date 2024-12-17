@@ -1,8 +1,9 @@
 package com.hcc.controllers;
-import com.hcc.dtos.AssignmentResponseDto;
-import com.hcc.entities.Assignment;
+import com.hcc.dtos.AssignmentCreateDto;
+import com.hcc.dtos.AssignmentDto;
 import com.hcc.entities.User;
 import com.hcc.exceptions.ResourceNotFoundException;
+import com.hcc.exceptions.UnauthorizedAccessException;
 import com.hcc.repositories.UserRepository;
 import com.hcc.services.AssignmentService;
 
@@ -13,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,41 +28,63 @@ public class AssignmentController {
     UserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<?> getAssignmentsByUserId(@RequestBody Long userId) {
-        List<AssignmentResponseDto> dtoList = assignmentService.getAssignmentsByUserId(userId);
+    public ResponseEntity<?> getAssignmentsByUser(@AuthenticationPrincipal UserDetails userDetails,
+                                                  @RequestParam(name = "status", required = false) String status) {
+        List<AssignmentDto> dtoList = new ArrayList<>();
+
+        User user = checkUser(userDetails);
+        //If User is LEARNER
+        if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_LEARNER"))) {
+            dtoList = assignmentService.getAssignmentsByLearner(user);
+        }
+
+        //If User is REVIEWER
+        if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_REVIEWER"))) {
+            dtoList = assignmentService.getAssignmentsByStatus(user, status);
+        }
+
         if (dtoList.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(dtoList);
+
     }
 
     @GetMapping("{id}")
     public ResponseEntity<?> getAssignmentById(@PathVariable("id") Long id) {
-        AssignmentResponseDto dto = assignmentService.getAssignmentById(id);
+        AssignmentDto dto = assignmentService.getAssignmentById(id);
         return ResponseEntity.ok(dto);
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<?> putAssignmentById(@RequestBody Assignment assignment, @PathVariable("id") Long id,
-                                               @AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required. User is not " +
-                    "authenticated");
-        }
-        Optional<User> user = userRepository.findByUsername(userDetails.getUsername());
-        if (user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found or unauthorized");
-        }
-        AssignmentResponseDto dto = assignmentService.putAssignmentById(assignment, id, user.get());
-        return ResponseEntity.ok(dto);
+    public ResponseEntity<?> updateAssignmentById(@RequestBody AssignmentDto updateDto,
+                                                  @PathVariable("id") Long id,
+                                                  @AuthenticationPrincipal UserDetails userDetails) {
+        User user = checkUser(userDetails);
+        AssignmentDto dto = assignmentService.updateAssignmentById(updateDto, id, user);
+        return ResponseEntity.status(HttpStatus.OK).body(dto);
     }
 
     @PostMapping
-    public ResponseEntity<?> postAssignment(@RequestBody Assignment assignment) {
-        AssignmentResponseDto dto = assignmentService.postAssignment(assignment);
+    public ResponseEntity<?> createAssignment(@RequestBody AssignmentCreateDto createDto,
+                                              @AuthenticationPrincipal UserDetails userDetails) {
+        User user = checkUser(userDetails);
+        AssignmentDto dto = assignmentService.createAssignment(createDto, user);
         if (dto == null) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    private User checkUser(UserDetails userDetails) {
+        if (userDetails == null) {
+            throw new UnauthorizedAccessException("Authentication required. User is not authenticated");
+        }
+        Optional<User> userOptional = userRepository.findByUsername(userDetails.getUsername());
+        if (userOptional.isEmpty()) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
+        return userOptional.get();
     }
 }
