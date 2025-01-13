@@ -20,7 +20,7 @@ public class LoginController {
         if (response.getToken().isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid login");
         } else {
-            return ResponseEntity.status(HttpStatus.OK).body("Successful login");
+            return ResponseEntity.status(HttpStatus.OK).body("Successful login: " + response.getToken());
         }
     }
 

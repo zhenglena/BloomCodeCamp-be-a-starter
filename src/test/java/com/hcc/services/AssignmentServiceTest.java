@@ -101,7 +101,7 @@ public class AssignmentServiceTest {
         List<Assignment> expectedList =
                 initializeAssignmentList().stream().filter(a -> a.getStatus().equals(AssignmentStatusEnum.RESUBMITTED.getStatus())
                         && a.getCodeReviewer() != null && a.getCodeReviewer().equals(reviewer)).collect(Collectors.toList());
-        when(assignmentRepo.findByReviewerIdAndStatus(reviewer.getId(), AssignmentStatusEnum.RESUBMITTED.getStatus())).thenReturn(expectedList);
+        when(assignmentRepo.findByCodeReviewerIdAndStatus(reviewer.getId(), AssignmentStatusEnum.RESUBMITTED.getStatus())).thenReturn(expectedList);
         //WHEN
         List<AssignmentDto> actual = service.getAssignmentsByStatus(reviewer,
                 AssignmentStatusEnum.RESUBMITTED.getStatus());

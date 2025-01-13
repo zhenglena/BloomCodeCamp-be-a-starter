@@ -19,10 +19,10 @@ public enum AssignmentEnum {
     ASSIGNMENT_13(13, "data driven websites"),
     ASSIGNMENT_14(14, "SQL Reporting");
 
-    private int assignmentNumber;
+    private Integer assignmentNumber;
     private String assignmentName;
 
-    AssignmentEnum (int assignmentNumber, String assignmentName) {
+    AssignmentEnum (Integer assignmentNumber, String assignmentName) {
         this.assignmentNumber = assignmentNumber;
         this.assignmentName = assignmentName;
     }
@@ -31,7 +31,16 @@ public enum AssignmentEnum {
         return assignmentName;
     }
 
-    public int getAssignmentNumber() {
+    public Integer getAssignmentNumber() {
         return assignmentNumber;
+    }
+
+    public static String getNameByNumber(Integer number) {
+        for (AssignmentEnum assignment : values()) {
+            if (assignment.getAssignmentNumber() == number) {
+                return assignment.getAssignmentName();
+            }
+        }
+        return "Unknown Assignment"; // default if not found
     }
 }

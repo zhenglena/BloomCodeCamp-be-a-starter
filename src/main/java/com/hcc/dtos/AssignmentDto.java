@@ -1,6 +1,9 @@
 package com.hcc.dtos;
 
 import com.hcc.entities.User;
+import com.hcc.enums.AssignmentEnum;
+import com.hcc.enums.AssignmentStatusEnum;
+
 import java.util.Objects;
 
 /**
@@ -9,13 +12,20 @@ import java.util.Objects;
  * The rest is not shown to the user as they won't be able to edit it anyway.
  */
 public class AssignmentDto {
-    private String status;
-    private String githubUrl;
-    private String branch;
-    private String reviewVideoUrl;
-    private User codeReviewer;
+    //cannot be edited
+    private Integer number;
+    private Long id;
+    private User user;
 
-    public AssignmentDto() {}
+    //can be edited
+    private String status; //automatically updates
+    private String githubUrl; //learner
+    private String branch; //learner
+    private String reviewVideoUrl; //reviewer
+    private User codeReviewer; //reviewer
+
+    public AssignmentDto() {
+    }
 
     public String getStatus() {
         return status;
@@ -57,28 +67,54 @@ public class AssignmentDto {
         this.codeReviewer = codeReviewer;
     }
 
+    public Integer getNumber() {
+        return number;
+    }
+
+    public void setNumber(Integer number) {
+        this.number = number;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         AssignmentDto that = (AssignmentDto) o;
-        return Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getGithubUrl(), that.getGithubUrl()) && Objects.equals(getBranch(), that.getBranch()) && Objects.equals(getReviewVideoUrl(), that.getReviewVideoUrl()) && Objects.equals(getCodeReviewer(), that.getCodeReviewer());
+        return Objects.equals(getNumber(), that.getNumber()) && Objects.equals(getId(), that.getId()) && Objects.equals(getUser(), that.getUser()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getGithubUrl(), that.getGithubUrl()) && Objects.equals(getBranch(), that.getBranch()) && Objects.equals(getReviewVideoUrl(), that.getReviewVideoUrl()) && Objects.equals(getCodeReviewer(), that.getCodeReviewer());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getStatus(), getGithubUrl(), getBranch(), getReviewVideoUrl(), getCodeReviewer());
+        return Objects.hash(getNumber(), getId(), getUser(), getStatus(), getGithubUrl(), getBranch(), getReviewVideoUrl(), getCodeReviewer());
     }
 
     @Override
     public String toString() {
-        return "AssignmentResponseDto{" +
-                "status='" + status + '\'' +
+        return "AssignmentDto{" +
+                "number=" + number +
+                ", id=" + id +
+                ", user=" + user +
+                ", status='" + status + '\'' +
                 ", githubUrl='" + githubUrl + '\'' +
                 ", branch='" + branch + '\'' +
                 ", reviewVideoUrl='" + reviewVideoUrl + '\'' +
                 ", codeReviewer=" + codeReviewer +
                 '}';
     }
-
 }

@@ -21,6 +21,7 @@ public class Authority implements GrantedAuthority {
     @JsonIgnore
     private User user;
 
+    public Authority() {}
     /**
      * constructor
      * @param authority the authority to denote

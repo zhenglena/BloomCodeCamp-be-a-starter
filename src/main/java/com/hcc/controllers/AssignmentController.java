@@ -2,6 +2,7 @@ package com.hcc.controllers;
 import com.hcc.dtos.AssignmentCreateDto;
 import com.hcc.dtos.AssignmentDto;
 import com.hcc.entities.User;
+import com.hcc.enums.AssignmentStatusEnum;
 import com.hcc.exceptions.ResourceNotFoundException;
 import com.hcc.exceptions.UnauthorizedAccessException;
 import com.hcc.repositories.UserRepository;
@@ -48,10 +49,9 @@ public class AssignmentController {
 
         //If User is REVIEWER
         if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_REVIEWER"))) {
-            if (status.isEmpty()) {
-                return
+            if (!status.isEmpty()) {
+                dtoList = assignmentService.getAssignmentsByStatus(user, status);
             }
-            dtoList = assignmentService.getAssignmentsByStatus(user, status);
         }
 
         if (dtoList.isEmpty()) {
@@ -106,7 +106,7 @@ public class AssignmentController {
     /**
      * This is a helper method to authenticate UserDetails
      * @param userDetails the user to be authenticated
-     * @return the retrieved User from the database
+     * @return the User
      */
     private User checkUser(UserDetails userDetails) {
         if (userDetails == null) {

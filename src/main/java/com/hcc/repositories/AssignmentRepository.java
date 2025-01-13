@@ -12,7 +12,7 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
     List<Assignment> findByUserId(Long learnerId);
 
     //query assignments associated with a Reviewer and a provided status
-    List<Assignment> findByReviewerIdAndStatus(Long reviewerId, String status);
+    List<Assignment> findByCodeReviewerIdAndStatus(Long reviewerId, String status);
 
     //query assignments by status
     List<Assignment> findByStatus(String status);

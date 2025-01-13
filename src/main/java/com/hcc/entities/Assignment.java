@@ -18,8 +18,10 @@ public class Assignment {
     @Column(name = "video_url")
     private String reviewVideoUrl;
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private User user;
+    @ManyToOne
+    @JoinColumn(name = "code_reviewer_id", referencedColumnName = "user_id")
     private User codeReviewer;
 
     /**

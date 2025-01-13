@@ -3,6 +3,7 @@ package com.hcc.mappers;
 import com.hcc.dtos.AssignmentCreateDto;
 import com.hcc.dtos.AssignmentDto;
 import com.hcc.entities.Assignment;
+import com.hcc.enums.AssignmentEnum;
 import com.hcc.enums.AssignmentStatusEnum;
 import org.mapstruct.*;
 
@@ -11,14 +12,20 @@ import java.util.List;
 @Mapper(componentModel = "spring", imports = AssignmentStatusEnum.class)
 public interface AssignmentMapper {
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateAssignment(AssignmentDto dto, @MappingTarget Assignment assignment);
-
-    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "number", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "reviewVideoUrl", ignore = true)
+    @Mapping(target = "codeReviewer", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateLearnerFields(AssignmentDto dto, @MappingTarget Assignment source);
 
-    @Mapping(target = "reviewVideoUrl", ignore = true)
+
+    @Mapping(target = "number", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "githubUrl", ignore = true)
+    @Mapping(target = "branch", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateReviewerFields(AssignmentDto dto, @MappingTarget Assignment source);
 

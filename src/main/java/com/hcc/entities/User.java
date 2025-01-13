@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = "username"))
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class User implements UserDetails {
     @Id
@@ -30,6 +30,7 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonIgnore
     private List<Authority> authorities;
+
     /**
      * no-args
      */

@@ -65,14 +65,14 @@ public class AssignmentService {
     public List<AssignmentDto> getAssignmentsByStatus(User reviewer, String status) {
         List<Assignment> assignments = new ArrayList<>();
 
-        if (status.equals(AssignmentStatusEnum.SUBMITTED.getStatus())) {
+        if (status.equalsIgnoreCase(AssignmentStatusEnum.SUBMITTED.getStatus())) {
             log.info("Retrieving assignments with status: {}", status);
-            assignments = assignmentRepository.findByStatus(status);
+            assignments = assignmentRepository.findByStatus(AssignmentStatusEnum.SUBMITTED.getStatus());
         }
 
-        if (status.equals(AssignmentStatusEnum.RESUBMITTED.getStatus())) {
+        if (status.equalsIgnoreCase(AssignmentStatusEnum.RESUBMITTED.getStatus())) {
             log.info("Retrieving assignments with status: {} and claimed by reviewer: {}", status, reviewer);
-            assignments = assignmentRepository.findByReviewerIdAndStatus(reviewer.getId(), status);
+            assignments = assignmentRepository.findByCodeReviewerIdAndStatus(reviewer.getId(), AssignmentStatusEnum.RESUBMITTED.getStatus());
         }
 
         if (status.isEmpty()) {
@@ -115,36 +115,16 @@ public class AssignmentService {
      */
     public AssignmentDto updateAssignmentById(AssignmentDto updateDto, Long id, User user) {
         Assignment assignment = mapper.toAssignment(getAssignmentById(id));
-        assignment.setId(id);
 
         if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_REVIEWER"))) {
+            //CLAIM
             mapper.updateReviewerFields(updateDto, assignment);
-
-            if (updateDto.getReviewVideoUrl() != null && updateDto.getStatus().equals(AssignmentStatusEnum.COMPLETED.getStatus())) {
-                log.info("Updating review video url field if assignment is marked completed");
-                assignment.setReviewVideoUrl(updateDto.getReviewVideoUrl());
-            }
-
         }
 
         if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_LEARNER"))) {
             mapper.updateLearnerFields(updateDto, assignment);
-
-            if (assignment.getStatus().equals(AssignmentStatusEnum.NEEDS_UPDATE.getStatus()) && updateDto.getBranch() != null
-                    && updateDto.getGithubUrl() != null) {
-                log.info("Updating Branch, GitHub url, and changing status from NEEDS_UPDATE to RESUBMITTED");
-                assignment.setBranch(updateDto.getBranch());
-                assignment.setGithubUrl(updateDto.getGithubUrl());
-                assignment.setStatus(AssignmentStatusEnum.RESUBMITTED.getStatus());
-            }
-
-            if (updateDto.getStatus().equals(AssignmentStatusEnum.SUBMITTED.getStatus()) && assignment.getStatus().equals(
-                    AssignmentStatusEnum.PENDING_SUBMISSION.getStatus())) {
-                log.info("Updating status from PENDING_SUBMISSION to SUBMITTED");
-                assignment.setStatus(AssignmentStatusEnum.SUBMITTED.getStatus());
-            }
-
         }
+
         log.info("Successfully updated assignment with updated fields");
         assignmentRepository.save(assignment);
         log.info("Saved assignment");
