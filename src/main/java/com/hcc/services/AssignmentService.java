@@ -59,27 +59,13 @@ public class AssignmentService {
      * If RESUBMITTED, any assignments that is associated with the Reviewer and has the status RESUBMITTED will be
      * returned.
      * If the list comes back empty, then ResponseEntity will return a 204 No Content.
-     * @param status the status that is being queried
      * @return List of Assignment DTOs that have this status
      */
-    public List<AssignmentDto> getAssignmentsByStatus(User reviewer, String status) {
+    public List<AssignmentDto> getAssignmentsByReviewer(User reviewer) {
         List<Assignment> assignments = new ArrayList<>();
-
-        if (status.equalsIgnoreCase(AssignmentStatusEnum.SUBMITTED.getStatus())) {
-            log.info("Retrieving assignments with status: {}", status);
-            assignments = assignmentRepository.findByStatus(AssignmentStatusEnum.SUBMITTED.getStatus());
-        }
-
-        if (status.equalsIgnoreCase(AssignmentStatusEnum.RESUBMITTED.getStatus())) {
-            log.info("Retrieving assignments with status: {} and claimed by reviewer: {}", status, reviewer);
-            assignments = assignmentRepository.findByCodeReviewerIdAndStatus(reviewer.getId(), AssignmentStatusEnum.RESUBMITTED.getStatus());
-        }
-
-        if (status.isEmpty()) {
-            log.info("Status was not provided, no assignments retrieved");
-        } else if (assignments.isEmpty()) {
-            log.info("No assignments found with query {}", status);
-        }
+        assignments.addAll(assignmentRepository.findByStatus(AssignmentStatusEnum.SUBMITTED.getStatus()));
+        assignments.addAll(assignmentRepository.findByCodeReviewerIdAndStatus(reviewer.getId(),
+                AssignmentStatusEnum.RESUBMITTED.getStatus()));
 
         log.info("Returning assignments...");
         return mapper.toDtoList(assignments);

@@ -11,6 +11,9 @@ import java.util.List;
 
 @Mapper(componentModel = "spring", imports = AssignmentStatusEnum.class)
 public interface AssignmentMapper {
+    default String mapNumberToName(Integer num) {
+        return AssignmentEnum.getNameByNumber(num);
+    }
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "number", ignore = true)
@@ -29,10 +32,12 @@ public interface AssignmentMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateReviewerFields(AssignmentDto dto, @MappingTarget Assignment source);
 
+    @Mapping(target = "name", expression = "java(mapNumberToName(assignment.getNumber()))")
     AssignmentDto toDto(Assignment assignment);
 
     Assignment toAssignment(AssignmentDto dto);
 
+    @Mapping(target = "name", expression = "java(mapNumberToName(assignment.getNumber()))")
     List<AssignmentDto> toDtoList(List<Assignment> assignments);
 
     List<Assignment> toAssignmentList(List<AssignmentDto> assignmentDtos);

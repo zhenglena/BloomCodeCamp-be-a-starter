@@ -30,15 +30,14 @@ public class AssignmentController {
 
     /**
      * This will retrieve Assignments depending on the User and their authority level.
-     * If a Learner is retrieving, then all Assignments under their name will be shown.
-     * If a Reviewer is retrieving, it'll need a status to query.
+     * If a Learner is retrieving, then all Assignments under their name will be returned.
+     * If a Reviewer is retrieving, then all Assignments that has been claimed and all Assignments that have been
+     * submitted but unclaimed will be returned
      * @param userDetails The user logged in
-     * @param status the status to be queried from the db
      * @return 204 No Content if List is empty, otherwise a 200 OK status
      */
     @GetMapping
-    public ResponseEntity<?> getAssignmentsByUser(@AuthenticationPrincipal UserDetails userDetails,
-                                                  @RequestParam(name = "status", required = false) String status) {
+    public ResponseEntity<?> getAssignmentsByUser(@AuthenticationPrincipal UserDetails userDetails) {
         List<AssignmentDto> dtoList = new ArrayList<>();
 
         User user = checkUser(userDetails);
@@ -49,16 +48,13 @@ public class AssignmentController {
 
         //If User is REVIEWER
         if (user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_REVIEWER"))) {
-            if (!status.isEmpty()) {
-                dtoList = assignmentService.getAssignmentsByStatus(user, status);
-            }
+            dtoList = assignmentService.getAssignmentsByReviewer(user);
         }
 
         if (dtoList.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(dtoList);
-
     }
 
     /**

@@ -16,6 +16,7 @@ public class AssignmentDto {
     private Integer number;
     private Long id;
     private User user;
+    private String name; //this is generated when mapping over to a DTO
 
     //can be edited
     private String status; //automatically updates
@@ -91,17 +92,25 @@ public class AssignmentDto {
         this.user = user;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         AssignmentDto that = (AssignmentDto) o;
-        return Objects.equals(getNumber(), that.getNumber()) && Objects.equals(getId(), that.getId()) && Objects.equals(getUser(), that.getUser()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getGithubUrl(), that.getGithubUrl()) && Objects.equals(getBranch(), that.getBranch()) && Objects.equals(getReviewVideoUrl(), that.getReviewVideoUrl()) && Objects.equals(getCodeReviewer(), that.getCodeReviewer());
+        return Objects.equals(getNumber(), that.getNumber()) && Objects.equals(getId(), that.getId()) && Objects.equals(getUser(), that.getUser()) && Objects.equals(getName(), that.getName()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getGithubUrl(), that.getGithubUrl()) && Objects.equals(getBranch(), that.getBranch()) && Objects.equals(getReviewVideoUrl(), that.getReviewVideoUrl()) && Objects.equals(getCodeReviewer(), that.getCodeReviewer());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getNumber(), getId(), getUser(), getStatus(), getGithubUrl(), getBranch(), getReviewVideoUrl(), getCodeReviewer());
+        return Objects.hash(getNumber(), getId(), getUser(), getName(), getStatus(), getGithubUrl(), getBranch(), getReviewVideoUrl(), getCodeReviewer());
     }
 
     @Override
@@ -110,6 +119,7 @@ public class AssignmentDto {
                 "number=" + number +
                 ", id=" + id +
                 ", user=" + user +
+                ", name='" + name + '\'' +
                 ", status='" + status + '\'' +
                 ", githubUrl='" + githubUrl + '\'' +
                 ", branch='" + branch + '\'' +

@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/auth")
 public class LoginController {
@@ -20,16 +22,16 @@ public class LoginController {
         if (response.getToken().isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid login");
         } else {
-            return ResponseEntity.status(HttpStatus.OK).body("Successful login: " + response.getToken());
+            return ResponseEntity.status(HttpStatus.OK).body(response.getToken());
         }
     }
 
-    @PostMapping("/validate")
+    @GetMapping("/validate")
     public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String token) {
-        boolean isValid = loginService.validateToken(token);
+        List<String> authorityList = loginService.validateToken(token);
 
-        if (isValid) {
-            return ResponseEntity.ok("Authentication successful");
+        if (!authorityList.isEmpty()) {
+            return ResponseEntity.ok(authorityList.get(0));
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
         }

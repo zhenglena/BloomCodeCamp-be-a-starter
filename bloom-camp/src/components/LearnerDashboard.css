@@ -1,0 +1,22 @@
+body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* Aligns content to the top */
+    height: 100vh;
+    width: 100vw;
+    color: var(--color);
+}
+
+h1 {
+    justify-content: center;
+}
+
+.assignment-group {
+    left: 10px;
+    top: 100px;
+    max-width: 400px;
+    width: auto;
+    height: auto;
+}
