@@ -1,0 +1,66 @@
+.dashboard {
+    width: 100%;
+}
+
+.header {
+    h2 {
+        text-align: center;
+    }
+
+    h1 {
+        margin: 0;
+        text-align: center;
+    }
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.dashboard {
+    background: rgb(73, 80, 140);
+    width: 900px;
+    min-height: 400px;
+    border-radius: 10px;
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 1rem;
+}
+
+.assignment-group {
+    padding: 5px;
+
+    h2 {
+        margin-left: 20px;
+    }
+}
+
+.assignment-container {
+    background: rgb(49, 47, 47);
+    width: 850px;
+    height: 100px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    margin: 1.5rem;
+}
+
+h3 {
+    font-size: small;
+}
+
+.assignment-item {
+    background: rgb(85, 82, 82);
+    width: 160px;
+    height: 50px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    display: inline-grid;
+    justify-content: center;
+    align-items: center;
+    margin: 1.5rem;
+}

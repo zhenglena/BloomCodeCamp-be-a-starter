@@ -66,6 +66,8 @@ public class AssignmentService {
         assignments.addAll(assignmentRepository.findByStatus(AssignmentStatusEnum.SUBMITTED.getStatus()));
         assignments.addAll(assignmentRepository.findByCodeReviewerIdAndStatus(reviewer.getId(),
                 AssignmentStatusEnum.RESUBMITTED.getStatus()));
+        assignments.addAll(assignmentRepository.findByCodeReviewerIdAndStatus(reviewer.getId(),
+                AssignmentStatusEnum.COMPLETED.getStatus()));
 
         log.info("Returning assignments...");
         return mapper.toDtoList(assignments);

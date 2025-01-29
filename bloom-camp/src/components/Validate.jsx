@@ -7,7 +7,7 @@ export const validateToken = async (token) => {
                 Authorization: `${token}`,
             },
         });
-        console.log("Authentication successful");
+        console.log("Authentication successful:", response.data);
         return response.data;
     } catch (error) {
         console.error("Token validation failed:", error);

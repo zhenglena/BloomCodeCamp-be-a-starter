@@ -26,38 +26,50 @@ const Login = () => {
             console.log("Login successful");
             const token = response.data;
             localStorage.setItem("authToken", token); //stores the token in localstorage
-            await validateToken(token); //calls on the validate endpoint
+            const authority = await validateToken(token); //calls on the validate endpoint
 
-            navigate("/learnerDashboard");
+            if (authority === "ROLE_LEARNER") {
+                navigate("/LearnerDashboard");
+            } else if (authority === "ROLE_REVIEWER") {
+                navigate("/ReviewerDashboard");
+            } else {
+                throw error;
+            }
+
         } catch (error) {
             alert("Login failed");
         }
     }
 
     return (
-        <div className="login-container">
-            <form className="login-form" onSubmit={handleSubmit}>
-                <h2>Login</h2>
-                <div className="input-group">
-                    <label>Username</label>
-                    <input
-                        type="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="input-group">
-                    <label>Password</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                </div>
-                <button type="submit" className="login-button">Login</button>
-            </form>
+        <div className="welcome-container">
+            <div>
+                <h1>Welcome to Bloom Camp!</h1>
+            </div>
+            <div className="login-container">
+                <form className="login-form" onSubmit={handleSubmit}>
+                    <h2>Login</h2>
+                    <div className="input-group">
+                        <label>Username</label>
+                        <input
+                            type="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="input-group">
+                        <label>Password</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <button type="submit" className="login-button">Login</button>
+                </form>
+            </div>
         </div>
     );
 };

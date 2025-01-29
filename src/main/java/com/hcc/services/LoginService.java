@@ -42,7 +42,6 @@ public class LoginService {
     /**
      * Login endpoint. This will take the username and password from AuthCredentialRequest and authenticate it.
      * If the username and/or password is invalid, it will throw an AuthenticationException.
-     *
      * @param request the username and password
      * @return an OK from ResponseEntity if validated
      */
@@ -65,7 +64,6 @@ public class LoginService {
      * Validates the token to confirm user. If the token is valid, it will send a 200 OK Response.
      * If the token is not valid, it will send a 401 Unauthorized Response.
      * Throws a regular Exception as a plethora of exceptions can be thrown from validation.
-     *
      * @param token the token to authenticate
      * @return a 200 OK Status if validated, or else a 401 Unauthorized status
      */
