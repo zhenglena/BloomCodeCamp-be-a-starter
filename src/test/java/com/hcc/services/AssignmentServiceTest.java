@@ -81,33 +81,6 @@ public class AssignmentServiceTest {
         assertEquals(expected, actual);
     }
 
-    @Test
-    public void getAssignmentsByStatus_submittedStatus_returnsAllByStatus() {
-        //GIVEN
-        List<Assignment> expectedList =
-                initializeAssignmentList().stream().filter(a -> a.getStatus().equals(AssignmentStatusEnum.SUBMITTED.getStatus())).collect(Collectors.toList());
-        when(assignmentRepo.findByStatus(AssignmentStatusEnum.SUBMITTED.getStatus())).thenReturn(expectedList);
-        //WHEN
-        List<AssignmentDto> actual = service.getAssignmentsByStatus(reviewer,
-                AssignmentStatusEnum.SUBMITTED.getStatus());
-        //THEN
-        assertEquals(mapper.toDtoList(expectedList), actual);
-        assertEquals(expectedList.size(), actual.size());
-    }
-
-    @Test
-    public void getAssignmentsByStatus_resubmittedStatus_returnsAllByStatus() {
-        //GIVEN
-        List<Assignment> expectedList =
-                initializeAssignmentList().stream().filter(a -> a.getStatus().equals(AssignmentStatusEnum.RESUBMITTED.getStatus())
-                        && a.getCodeReviewer() != null && a.getCodeReviewer().equals(reviewer)).collect(Collectors.toList());
-        when(assignmentRepo.findByCodeReviewerIdAndStatus(reviewer.getId(), AssignmentStatusEnum.RESUBMITTED.getStatus())).thenReturn(expectedList);
-        //WHEN
-        List<AssignmentDto> actual = service.getAssignmentsByStatus(reviewer,
-                AssignmentStatusEnum.RESUBMITTED.getStatus());
-        //THEN
-        assertEquals(mapper.toDtoList(expectedList), actual);
-    }
 
     @Test
     public void getAssignmentById_successful() {
@@ -192,6 +165,7 @@ public class AssignmentServiceTest {
 
         Assignment expected = new Assignment(AssignmentStatusEnum.RESUBMITTED.getStatus(), 3, "github.com",
                 "branch1", null, learner, reviewer);
+        expected.setId(456L);
         AssignmentDto expectedDto = mapper.toDto(expected);
 
         when(assignmentRepo.findById(456L)).thenReturn(Optional.of(assignment));
@@ -247,6 +221,8 @@ public class AssignmentServiceTest {
                 null, learner, null));
         assignments.add(new Assignment(AssignmentStatusEnum.PENDING_SUBMISSION.getStatus(), 6, null,
                 null, null, learner, null));
+        assignments.add(new Assignment(AssignmentStatusEnum.COMPLETED.getStatus(), 6, github,
+                branch, reviewVideoUrl, learner, reviewer));
 
         return assignments;
     }

@@ -2,6 +2,10 @@ package com.hcc.services;
 
 import com.hcc.dtos.AuthCredentialRequest;
 import com.hcc.dtos.AuthCredentialResponse;
+import com.hcc.entities.Authority;
+import com.hcc.entities.User;
+import com.hcc.enums.AuthorityEnum;
+import com.hcc.repositories.UserRepository;
 import com.hcc.utils.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +16,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -28,6 +35,8 @@ public class LoginServiceTest {
     private Authentication auth;
     @Mock
     private UserDetails userDetails;
+    @Mock
+    private UserRepository userRepo;
 
     private AuthCredentialRequest request;
     private AuthCredentialResponse response;
@@ -79,38 +88,22 @@ public class LoginServiceTest {
     }
 
     @Test
-    public void validateToken_isValid_returnsTrue() {
+    public void validateToken_isValid_returnsList() {
         //GIVEN
-        boolean expected = true;
         String username = "username";
         boolean isValid = true;
+        User learner = new User();
+        learner.setAuthorities(List.of(new Authority(AuthorityEnum.ROLE_LEARNER.name())));
 
         when(jwtUtil.getUsernameFromToken(token)).thenReturn(username);
         when(userDetailServiceImp.loadUserByUsername(username)).thenReturn(userDetails);
         when(jwtUtil.validateToken(token, userDetails)).thenReturn(isValid);
+        when(userRepo.findByUsername(username)).thenReturn(Optional.of(learner));
 
         //WHEN
-        boolean actual = loginService.validateToken(token);
+        List<String> actual = loginService.validateToken(token);
 
         //THEN
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void validateToken_isNotValid_returnsFalse() {
-        //GIVEN
-        boolean expected = false;
-        String username = "username";
-        boolean isValid = false;
-
-        when(jwtUtil.getUsernameFromToken(token)).thenReturn(username);
-        when(userDetailServiceImp.loadUserByUsername(username)).thenReturn(userDetails);
-        when(jwtUtil.validateToken(token, userDetails)).thenReturn(isValid);
-
-        //WHEN
-        boolean actual = loginService.validateToken(token);
-
-        //THEN
-        assertEquals(expected, actual);
+        assertEquals("ROLE_LEARNER", actual.get(0));
     }
 }

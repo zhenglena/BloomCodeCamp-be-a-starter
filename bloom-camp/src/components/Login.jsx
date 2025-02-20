@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Login.css";
 import axios from "axios";
 import { validateToken } from "./Validate";
@@ -15,6 +15,10 @@ const Login = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
+
+    useEffect(() => {
+        document.title = "Login";
+    });
 
     const handleSubmit = async (e) => {
         e.preventDefault();

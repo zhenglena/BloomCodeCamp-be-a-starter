@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -109,24 +110,36 @@ public class AssignmentControllerTest {
 
     @Test
     public void getAssignmentsByUser_reviewer_returnsList() throws Exception {
-        String status = AssignmentStatusEnum.SUBMITTED.getStatus();
+        String submitted = AssignmentStatusEnum.SUBMITTED.getStatus();
+        String resubmitted = AssignmentStatusEnum.RESUBMITTED.getStatus();
+        String completed = AssignmentStatusEnum.COMPLETED.getStatus();
 
         checkUserAuthentication(userDetails, reviewer);
 
-        List<Assignment> assignments =
-                assignmentList.stream().filter(a -> a.getStatus().equals(status)).collect(Collectors.toList());
+        List<Assignment> submittedAssignments =
+                assignmentList.stream().filter(a -> a.getStatus().equals(submitted)).collect(Collectors.toList());
+        List<Assignment> resubmittedAssignments =
+                assignmentList.stream().filter(a -> a.getStatus().equals(resubmitted)).collect(Collectors.toList());
+        List<Assignment> completedAssignments =
+                assignmentList.stream().filter(a -> a.getStatus().equals(completed)).collect(Collectors.toList());
 
-        when(assignmentRepository.findByStatus(status)).thenReturn(assignments);
-        when(assignmentService.getAssignmentsByStatus(reviewer, status)).thenReturn(mapper.toDtoList(assignments));
+        List<Assignment> returnedAssignments = new ArrayList<>();
+        returnedAssignments.addAll(submittedAssignments);
+        returnedAssignments.addAll(resubmittedAssignments);
+        returnedAssignments.addAll(completedAssignments);
+
+        when(assignmentRepository.findByStatus(submitted)).thenReturn(submittedAssignments);
+        when(assignmentRepository.findByCodeReviewerIdAndStatus(reviewer.getId(), resubmitted)).thenReturn(resubmittedAssignments);
+        when(assignmentRepository.findByCodeReviewerIdAndStatus(reviewer.getId(), completed)).thenReturn(completedAssignments);
+        when(assignmentService.getAssignmentsByReviewer(reviewer)).thenReturn(mapper.toDtoList(returnedAssignments));
 
         mockMvc.perform(MockMvcRequestBuilders
                         .get("/api/assignments")
-                        .param("status", status)
                         .with(user(userDetails)))
                 .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.size()", CoreMatchers.is(assignments.size())));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.size()", CoreMatchers.is(returnedAssignments.size())));
 
-        verify(assignmentService).getAssignmentsByStatus(reviewer, status);
+        verify(assignmentService).getAssignmentsByReviewer(reviewer);
     }
 
     @Test
